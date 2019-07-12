@@ -21,6 +21,9 @@ import java.io.Serializable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import javax.ejb.TransactionAttributeType;
 
 import groovy.lang.GroovyObject;
@@ -69,6 +72,26 @@ public class AnnotationTransactionAttributeSourceTests {
 		CallCountingTransactionManager serializedPtm =
 				(CallCountingTransactionManager) serializedTi.getTransactionManager();
 		assertThat(serializedPtm.commits).isEqualTo(2);
+	}
+
+	private static Connection connection;
+
+	static {
+		try {
+			connection = DriverManager.getConnection("jdbc:mysql://182.254.131.140/pes_jd_sub_01?serverTimezone=Asia/Shanghai&amp;nullCatalogMeansCurrent=true",
+					"wangmeng","Ywc201405");
+			System.out.println("1");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public class Do{
+
+		@Transactional
+		public void doSomething(){
+
+		}
 	}
 
 	@Test
