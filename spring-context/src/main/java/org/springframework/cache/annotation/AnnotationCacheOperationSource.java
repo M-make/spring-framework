@@ -45,7 +45,7 @@ import org.springframework.util.Assert;
  * @since 3.1
  */
 @SuppressWarnings("serial")
-public class AnnotationCacheOperationSource extends AbstractFallbackCacheOperationSource implements Serializable {
+public class  AnnotationCacheOperationSource extends AbstractFallbackCacheOperationSource implements Serializable {
 
 	private final boolean publicMethodsOnly;
 

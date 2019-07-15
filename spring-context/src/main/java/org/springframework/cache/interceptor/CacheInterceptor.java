@@ -40,7 +40,7 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @since 3.1
  */
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "Duplicates"})
 public class CacheInterceptor extends CacheAspectSupport implements MethodInterceptor, Serializable {
 
 	@Override
