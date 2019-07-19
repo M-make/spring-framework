@@ -134,7 +134,7 @@ public class UrlPathHelper {
 	 * <p>If the request specifies a character encoding itself, the request
 	 * encoding will override this setting. This also allows for generically
 	 * overriding the character encoding in a filter that invokes the
-	 * {@code ServletRequest.setCharacterEncoding} method.
+	 * {@code ServletRequest.setCharacterEncoding} method.x
 	 * @param defaultEncoding the character encoding to use
 	 * @see #determineEncoding
 	 * @see javax.servlet.ServletRequest#getCharacterEncoding()

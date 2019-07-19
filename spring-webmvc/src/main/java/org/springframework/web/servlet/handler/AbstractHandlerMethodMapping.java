@@ -379,18 +379,27 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	@Nullable
 	protected HandlerMethod lookupHandlerMethod(String lookupPath, HttpServletRequest request) throws Exception {
 		List<Match> matches = new ArrayList<>();
+		// 全量匹配
 		List<T> directPathMatches = this.mappingRegistry.getMappingsByUrl(lookupPath);
 		if (directPathMatches != null) {
+			// 全量匹配筛选，就算url一样，也会出现 GET POST， Consumer不一样的情况
 			addMatchingMappings(directPathMatches, matches, request);
 		}
 		if (matches.isEmpty()) {
 			// No choice but to go through all mappings...
+			// 如果根据url 匹配的都不符合，那么用所有的mapping，然后根据条件进行匹配
+			// 比如： 两个url ： POST /test/a    GET /test/*
+			// 如果我用get请求访问 test/a，会首先使用精准url匹配，如果没有匹配到，也就是matches为空的情况下
+			// 就会将所有的url 全部进行匹配，因为可能会有统配符号的url
+			// 其实，这个时候就会有一个点：尽量不要通配符匹配，因为当Mappings过多的情况下，就会循环的太多，
+			// 没必要
 			addMatchingMappings(this.mappingRegistry.getMappings().keySet(), matches, request);
 		}
 
 		if (!matches.isEmpty()) {
 			Comparator<Match> comparator = new MatchComparator(getMappingComparator(request));
 			matches.sort(comparator);
+			// 获取匹配度最高的
 			Match bestMatch = matches.get(0);
 			if (matches.size() > 1) {
 				if (logger.isTraceEnabled()) {
@@ -400,6 +409,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 					return PREFLIGHT_AMBIGUOUS_MATCH;
 				}
 				Match secondBestMatch = matches.get(1);
+				// 如果 第一和第二相同匹配度，报错
 				if (comparator.compare(bestMatch, secondBestMatch) == 0) {
 					Method m1 = bestMatch.handlerMethod.getMethod();
 					Method m2 = secondBestMatch.handlerMethod.getMethod();
@@ -418,8 +428,10 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	}
 
 	private void addMatchingMappings(Collection<T> mappings, List<Match> matches, HttpServletRequest request) {
+		// 挨个匹配
 		for (T mapping : mappings) {
 			T match = getMatchingMapping(mapping, request);
+			//  注解上的条件过滤后的集合
 			if (match != null) {
 				matches.add(new Match(match, this.mappingRegistry.getMappings().get(mapping)));
 			}

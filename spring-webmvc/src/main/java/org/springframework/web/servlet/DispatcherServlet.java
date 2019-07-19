@@ -1001,6 +1001,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		HandlerExecutionChain mappedHandler = null;
 		boolean multipartRequestParsed = false;
 
+		// web 异步处理器
 		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
 
 		try {
@@ -1008,10 +1009,14 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				// 检查是否是文件上传 如果是文件上传会有一个包装类型的request对象
 				processedRequest = checkMultipart(request);
+
+				// 是否是原来的request
 				multipartRequestParsed = (processedRequest != request);
 
 				// Determine handler for the current request.
+				// 查找handlerMapping
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
 					noHandlerFound(processedRequest, response);
