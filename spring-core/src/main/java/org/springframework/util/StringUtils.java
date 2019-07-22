@@ -58,6 +58,7 @@ import org.springframework.lang.Nullable;
  * @author Brian Clozel
  * @since 16 April 2001
  */
+@SuppressWarnings("Duplicates")
 public abstract class StringUtils {
 
 	private static final String FOLDER_SEPARATOR = "/";
@@ -769,6 +770,12 @@ public abstract class StringUtils {
 			}
 		}
 		return (changed ? new String(bos.toByteArray(), charset) : source);
+	}
+
+	public static void main(String[] args) {
+		String s = StringUtils.uriDecode("%2ftest%2fa%3fname%3d%e5%b0%8f%e7%99%bd", Charset.defaultCharset());
+		System.out.println(s);
+
 	}
 
 	/**
