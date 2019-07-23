@@ -101,8 +101,11 @@ public final class ModelFactory {
 	public void initModel(NativeWebRequest request, ModelAndViewContainer container, HandlerMethod handlerMethod)
 			throws Exception {
 
+		// 从session 里面提取 @SessionAttributes 标记的数据 ， 如果没有则为空
 		Map<String, ?> sessionAttributes = this.sessionAttributesHandler.retrieveAttributes(request);
+		// 加入到model 的map里面
 		container.mergeAttributes(sessionAttributes);
+
 		invokeModelAttributeMethods(request, container);
 
 		for (String name : findSessionAttributeArguments(handlerMethod)) {
