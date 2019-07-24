@@ -137,6 +137,7 @@ public final class ModelFactory {
 				continue;
 			}
 
+			// 调用@ModelAttribute 注解方法
 			Object returnValue = modelMethod.invokeForRequest(request, container);
 			if (!modelMethod.isVoid()){
 				String returnValueName = getNameForReturnValue(returnValue, modelMethod.getReturnType());
@@ -154,11 +155,15 @@ public final class ModelFactory {
 		// 遍历 @ModelAttribute 注解的方法
 		// 挨个查找每个元素是否在flashMap中含有，如果有的话，这个元素对应的@ModelAttribute就不会初始化掉
 		for (ModelMethod modelMethod : this.modelMethods) {
+
+			// 检查该modelHandler 是否在flashMap中含有
 			if (modelMethod.checkDependencies(container)) {
 				this.modelMethods.remove(modelMethod);
+				// 含有该modelHandler，就返回这个
 				return modelMethod;
 			}
 		}
+		// 如果在flashMap中没有值，则返回第一个modelMethod
 		ModelMethod modelMethod = this.modelMethods.get(0);
 		this.modelMethods.remove(modelMethod);
 		return modelMethod;

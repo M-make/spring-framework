@@ -39,6 +39,7 @@ import org.springframework.web.context.request.NativeWebRequest;
  * @author Juergen Hoeller
  * @since 3.1
  */
+@SuppressWarnings("Duplicates")
 public class HandlerMethodArgumentResolverComposite implements HandlerMethodArgumentResolver {
 
 	protected final Log logger = LogFactory.getLog(getClass());
@@ -129,6 +130,8 @@ public class HandlerMethodArgumentResolverComposite implements HandlerMethodArgu
 	/**
 	 * Find a registered {@link HandlerMethodArgumentResolver} that supports
 	 * the given method parameter.
+	 *
+	 *  获取参数解析器
 	 */
 	@Nullable
 	private HandlerMethodArgumentResolver getArgumentResolver(MethodParameter parameter) {

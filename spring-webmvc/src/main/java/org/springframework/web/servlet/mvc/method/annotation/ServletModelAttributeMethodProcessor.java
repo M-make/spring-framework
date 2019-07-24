@@ -72,6 +72,7 @@ public class ServletModelAttributeMethodProcessor extends ModelAttributeMethodPr
 	protected final Object createAttribute(String attributeName, MethodParameter parameter,
 			WebDataBinderFactory binderFactory, NativeWebRequest request) throws Exception {
 
+		// 从请求行和请求form元素获取数据
 		String value = getRequestValueForAttribute(attributeName, request);
 		if (value != null) {
 			Object attribute = createAttributeFromRequestValue(
@@ -81,6 +82,7 @@ public class ServletModelAttributeMethodProcessor extends ModelAttributeMethodPr
 			}
 		}
 
+		// 实例化model
 		return super.createAttribute(attributeName, parameter, binderFactory, request);
 	}
 

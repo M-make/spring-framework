@@ -558,14 +558,17 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		// Do this first, it may add ResponseBody advice beans
 		initControllerAdviceCache();
 
+		// 初始化 参数解析器
 		if (this.argumentResolvers == null) {
 			List<HandlerMethodArgumentResolver> resolvers = getDefaultArgumentResolvers();
 			this.argumentResolvers = new HandlerMethodArgumentResolverComposite().addResolvers(resolvers);
 		}
+		// 初始化
 		if (this.initBinderArgumentResolvers == null) {
 			List<HandlerMethodArgumentResolver> resolvers = getDefaultInitBinderArgumentResolvers();
 			this.initBinderArgumentResolvers = new HandlerMethodArgumentResolverComposite().addResolvers(resolvers);
 		}
+		// 初始化 返回值解析器
 		if (this.returnValueHandlers == null) {
 			List<HandlerMethodReturnValueHandler> handlers = getDefaultReturnValueHandlers();
 			this.returnValueHandlers = new HandlerMethodReturnValueHandlerComposite().addHandlers(handlers);
@@ -951,6 +954,13 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		return new ModelFactory(attrMethods, binderFactory, sessionAttrHandler);
 	}
 
+	/**
+	 *  创建 InvocableHandlerMethod
+	 * @param factory
+	 * @param bean
+	 * @param method
+	 * @return
+	 */
 	private InvocableHandlerMethod createModelAttributeMethod(WebDataBinderFactory factory, Object bean, Method method) {
 		InvocableHandlerMethod attrMethod = new InvocableHandlerMethod(bean, method);
 		if (this.argumentResolvers != null) {
