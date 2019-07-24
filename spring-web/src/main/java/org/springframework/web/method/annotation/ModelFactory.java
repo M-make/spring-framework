@@ -151,6 +151,8 @@ public final class ModelFactory {
 	}
 
 	private ModelMethod getNextModelMethod(ModelAndViewContainer container) {
+		// 遍历 @ModelAttribute 注解的方法
+		// 挨个查找每个元素是否在flashMap中含有，如果有的话，这个元素对应的@ModelAttribute就不会初始化掉
 		for (ModelMethod modelMethod : this.modelMethods) {
 			if (modelMethod.checkDependencies(container)) {
 				this.modelMethods.remove(modelMethod);
@@ -283,6 +285,7 @@ public final class ModelFactory {
 		public ModelMethod(InvocableHandlerMethod handlerMethod) {
 			this.handlerMethod = handlerMethod;
 			for (MethodParameter parameter : handlerMethod.getMethodParameters()) {
+				// 将方法上带有@ModelAttribute注解的参数，添加到方法依赖中去
 				if (parameter.hasParameterAnnotation(ModelAttribute.class)) {
 					this.dependencies.add(getNameForParameter(parameter));
 				}
@@ -295,6 +298,7 @@ public final class ModelFactory {
 
 		public boolean checkDependencies(ModelAndViewContainer mavContainer) {
 			for (String name : this.dependencies) {
+				// mav 不含有 该依赖，就返回false，只要有一个不含有，则返回false
 				if (!mavContainer.containsAttribute(name)) {
 					return false;
 				}

@@ -78,7 +78,7 @@ dependencies {
 	optional("org.aspectj:aspectjweaver:${aspectjVersion}")
 	optional("org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}")
 	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
-	optional("io.projectreactor:reactor-core")
+    compile("io.projectreactor:reactor-core")
 	optional("io.reactivex:rxjava:${rxjavaVersion}")
 	optional("io.reactivex:rxjava-reactive-streams:${rxjavaAdapterVersion}")
 	optional("io.reactivex.rxjava2:rxjava:${rxjava2Version}")
