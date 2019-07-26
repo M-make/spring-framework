@@ -87,14 +87,29 @@ class CallableInterceptorChain {
 		return (exceptionResult != null) ? exceptionResult : concurrentResult;
 	}
 
+	public static void main(String[] args) {
+		for (int i = 0; i < 10; i++) {
+			System.out.println(i);
+			break;
+		}
+	}
+
+	/**
+	 *  超时之后的处理
+	 */
 	public Object triggerAfterTimeout(NativeWebRequest request, Callable<?> task) {
+		// 取消任务
 		cancelTask();
+		// 拦截处理timeout
 		for (CallableProcessingInterceptor interceptor : this.interceptors) {
 			try {
 				Object result = interceptor.handleTimeout(request, task);
+				// 如果拦截器返回  CallableProcessingInterceptor.RESPONSE_HANDLED
+				// 则表示不调用其他拦截器
 				if (result == CallableProcessingInterceptor.RESPONSE_HANDLED) {
 					break;
 				}
+				// 如果拦截器返回不是 CallableProcessingInterceptor.RESULT_NONE 结束调用拦截器
 				else if (result != CallableProcessingInterceptor.RESULT_NONE) {
 					return result;
 				}
@@ -106,6 +121,9 @@ class CallableInterceptorChain {
 		return CallableProcessingInterceptor.RESULT_NONE;
 	}
 
+	/**
+	 *  取消任务，调用thread.interrupt
+	 */
 	private void cancelTask() {
 		Future<?> future = this.taskFuture;
 		if (future != null) {

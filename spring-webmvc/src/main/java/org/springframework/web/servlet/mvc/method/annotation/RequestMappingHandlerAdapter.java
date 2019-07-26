@@ -886,12 +886,17 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			mavContainer.setIgnoreDefaultModelOnRedirect(this.ignoreDefaultModelOnRedirect);
 
 			AsyncWebRequest asyncWebRequest = WebAsyncUtils.createAsyncWebRequest(request, response);
+			// 异步结果处理超时时间
 			asyncWebRequest.setTimeout(this.asyncRequestTimeout);
-
+			// 异步处理管理器
 			WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+			// 异步处理的线程池
 			asyncManager.setTaskExecutor(this.taskExecutor);
+			// 异步处理的请求对象
 			asyncManager.setAsyncWebRequest(asyncWebRequest);
+			// 异步处理拦截器
 			asyncManager.registerCallableInterceptors(this.callableInterceptors);
+			// 延迟结果拦截器
 			asyncManager.registerDeferredResultInterceptors(this.deferredResultInterceptors);
 
 			if (asyncManager.hasConcurrentResult()) {
@@ -905,7 +910,9 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				invocableMethod = invocableMethod.wrapConcurrentResult(result);
 			}
 
+			// 调用 @requestMapping 方法进行处理，并对返回值进行处理
 			invocableMethod.invokeAndHandle(webRequest, mavContainer);
+			// 如果是异步处理返回null
 			if (asyncManager.isConcurrentHandlingStarted()) {
 				return null;
 			}

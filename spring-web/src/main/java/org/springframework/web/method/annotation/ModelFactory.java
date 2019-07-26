@@ -106,6 +106,7 @@ public final class ModelFactory {
 		// 加入到model 的map里面
 		container.mergeAttributes(sessionAttributes);
 
+		// 调用@modelAttribute方法，并将返回的数据放入mav容器
 		invokeModelAttributeMethods(request, container);
 
 		for (String name : findSessionAttributeArguments(handlerMethod)) {
