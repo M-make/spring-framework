@@ -22,6 +22,11 @@ dependencies {
 	testCompile("org.codehaus.groovy:groovy:${groovyVersion}")
 	testCompile("org.eclipse.persistence:javax.persistence:2.2.0")
 	testCompile("io.projectreactor:reactor-test")
+
+
+	// 自定义
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
+	// https://mvnrepository.com/artifact/org.springframework/spring-jdbc
+	testCompile("org.springframework:spring-jdbc:5.1.8.RELEASE")
 
 }
