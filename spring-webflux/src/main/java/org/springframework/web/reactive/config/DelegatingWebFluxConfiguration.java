@@ -34,6 +34,9 @@ import org.springframework.web.reactive.result.method.annotation.ArgumentResolve
  * configuration provided by {@code WebFluxConfigurationSupport}. This is the
  * class actually imported by {@link EnableWebFlux @EnableWebFlux}.
  *
+ *  自定义配置webFlux 的代理类
+ *  将默认的配置传入 实现WebFluxConfigurer的子类(可以实现多个)
+ *
  * @author Brian Clozel
  * @since 5.0
  */

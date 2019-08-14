@@ -128,6 +128,9 @@ public class ResourceHandlerRegistry {
 	/**
 	 * Return a handler mapping with the mapped resource handlers; or {@code null} in case
 	 * of no registrations.
+	 *
+	 *  配置解析Resource 的HandlerMapping
+	 *  order：
 	 */
 	@Nullable
 	protected AbstractUrlHandlerMapping getHandlerMapping() {
