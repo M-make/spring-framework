@@ -13,55 +13,67 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.messaging.rsocket.annotation.support;
+package org.springframework.messaging.rsocket;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.rsocket.Payload;
 import io.rsocket.metadata.CompositeMetadata;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.codec.Decoder;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferFactory;
+import org.springframework.core.io.buffer.NettyDataBuffer;
 import org.springframework.core.io.buffer.NettyDataBufferFactory;
 import org.springframework.lang.Nullable;
-import org.springframework.messaging.rsocket.RSocketStrategies;
-import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 
 /**
- * Default {@link MetadataExtractor} implementation that relies on {@link Decoder}s
- * to deserialize the content of metadata entries.
- *
+ * Default {@link MetadataExtractor} implementation that relies on
+ * {@link Decoder}s to deserialize the content of metadata entries.
  * <p>By default only {@code "message/x.rsocket.routing.v0""} is extracted and
- * saved under {@link MetadataExtractor#ROUTE_KEY}. Use the
- * {@code metadataToExtract} methods to specify other metadata mime types of
- * interest to extract.
+ * saved under {@link MetadataExtractor#ROUTE_KEY}. Use {@code metadataToExtract}
+ * methods to specify other metadata mime types of interest to extract.
  *
  * @author Rossen Stoyanchev
  * @since 5.2
  */
 public class DefaultMetadataExtractor implements MetadataExtractor {
 
-	private final RSocketStrategies rsocketStrategies;
+	private final List<Decoder<?>> decoders;
 
-	private final Map<String, EntryProcessor<?>> entryProcessors = new HashMap<>();
+	private final Map<String, EntryExtractor<?>> registrations = new HashMap<>();
 
 
 	/**
-	 * Default constructor with {@link RSocketStrategies}.
+	 * Constructor with decoders for de-serializing metadata entries.
 	 */
-	public DefaultMetadataExtractor(RSocketStrategies strategies) {
-		Assert.notNull(strategies, "RSocketStrategies is required");
-		this.rsocketStrategies = strategies;
-		// TODO: remove when rsocket-core API available
-		metadataToExtract(MessagingRSocket.ROUTING, String.class, ROUTE_KEY);
+	public DefaultMetadataExtractor(Decoder<?>... decoders) {
+		this(Arrays.asList(decoders));
+	}
+
+	/**
+	 * Constructor with list of decoders for de-serializing metadata entries.
+	 */
+	public DefaultMetadataExtractor(List<Decoder<?>> decoders) {
+		this.decoders = Collections.unmodifiableList(new ArrayList<>(decoders));
+	}
+
+
+	/**
+	 * Return a read-only list with the configured decoders.
+	 */
+	public List<? extends Decoder<?>> getDecoders() {
+		return this.decoders;
 	}
 
 
@@ -74,9 +86,7 @@ public class DefaultMetadataExtractor implements MetadataExtractor {
 	 * @param name assign a name for the decoded value; if not provided, then
 	 * the mime type is used as the key
 	 */
-	public void metadataToExtract(
-			MimeType mimeType, Class<?> targetType, @Nullable String name) {
-
+	public void metadataToExtract(MimeType mimeType, Class<?> targetType, @Nullable String name) {
 		String key = name != null ? name : mimeType.toString();
 		metadataToExtract(mimeType, targetType, (value, map) -> map.put(key, value));
 	}
@@ -85,6 +95,8 @@ public class DefaultMetadataExtractor implements MetadataExtractor {
 	 * Variant of {@link #metadataToExtract(MimeType, Class, String)} that accepts
 	 * {@link ParameterizedTypeReference} instead of {@link Class} for
 	 * specifying a target type with generic parameters.
+	 * @param mimeType the mime type of metadata entries to extract
+	 * @param targetType the target value type to decode to
 	 */
 	public void metadataToExtract(
 			MimeType mimeType, ParameterizedTypeReference<?> targetType, @Nullable String name) {
@@ -103,11 +115,9 @@ public class DefaultMetadataExtractor implements MetadataExtractor {
 	 * @param <T> the target value type
 	 */
 	public <T> void metadataToExtract(
-			MimeType mimeType, Class<T> targetType,
-			BiConsumer<T, Map<String, Object>> mapper) {
+			MimeType mimeType, Class<T> targetType, BiConsumer<T, Map<String, Object>> mapper) {
 
-		EntryProcessor<T> spec = new EntryProcessor<>(mimeType, targetType, mapper);
-		this.entryProcessors.put(mimeType.toString(), spec);
+		registerMetadata(mimeType, ResolvableType.forClass(targetType), mapper);
 	}
 
 	/**
@@ -115,51 +125,66 @@ public class DefaultMetadataExtractor implements MetadataExtractor {
 	 * accepts {@link ParameterizedTypeReference} instead of {@link Class} for
 	 * specifying a target type with generic parameters.
 	 * @param mimeType the mime type of metadata entries to extract
-	 * @param targetType the target value type to decode to
+	 * @param type the target value type to decode to
 	 * @param mapper custom logic to add the decoded value to the output map
 	 * @param <T> the target value type
 	 */
 	public <T> void metadataToExtract(
-			MimeType mimeType, ParameterizedTypeReference<T> targetType,
-			BiConsumer<T, Map<String, Object>> mapper) {
+			MimeType mimeType, ParameterizedTypeReference<T> type, BiConsumer<T, Map<String, Object>> mapper) {
 
-		EntryProcessor<T> spec = new EntryProcessor<>(mimeType, targetType, mapper);
-		this.entryProcessors.put(mimeType.toString(), spec);
+		registerMetadata(mimeType, ResolvableType.forType(type), mapper);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> void registerMetadata(
+			MimeType mimeType, ResolvableType targetType, BiConsumer<T, Map<String, Object>> mapper) {
+
+		for (Decoder<?> decoder : this.decoders) {
+			if (decoder.canDecode(targetType, mimeType)) {
+				this.registrations.put(mimeType.toString(),
+						new EntryExtractor<>((Decoder<T>) decoder, mimeType, targetType, mapper));
+				return;
+			}
+		}
+		throw new IllegalArgumentException("No decoder for " + mimeType + " and " + targetType);
 	}
 
 
 	@Override
 	public Map<String, Object> extract(Payload payload, MimeType metadataMimeType) {
 		Map<String, Object> result = new HashMap<>();
-		if (metadataMimeType.equals(MessagingRSocket.COMPOSITE_METADATA)) {
+		if (metadataMimeType.equals(COMPOSITE_METADATA)) {
 			for (CompositeMetadata.Entry entry : new CompositeMetadata(payload.metadata(), false)) {
-				processEntry(entry.getContent(), entry.getMimeType(), result);
+				extractEntry(entry.getContent(), entry.getMimeType(), result);
 			}
 		}
 		else {
-			processEntry(payload.metadata(), metadataMimeType.toString(), result);
+			extractEntry(payload.metadata(), metadataMimeType.toString(), result);
 		}
 		return result;
 	}
 
-	private void processEntry(ByteBuf content, @Nullable String mimeType, Map<String, Object> result) {
-		EntryProcessor<?> entryProcessor = this.entryProcessors.get(mimeType);
-		if (entryProcessor != null) {
-			content.retain();
-			entryProcessor.process(content, result);
+	private void extractEntry(ByteBuf content, @Nullable String mimeType, Map<String, Object> result) {
+		EntryExtractor<?> extractor = this.registrations.get(mimeType);
+		if (extractor != null) {
+			extractor.extract(content, result);
 			return;
 		}
-		if (MessagingRSocket.ROUTING.toString().equals(mimeType)) {
+		if (MetadataExtractor.ROUTING.toString().equals(mimeType)) {
 			// TODO: use rsocket-core API when available
+			result.put(MetadataExtractor.ROUTE_KEY, content.toString(StandardCharsets.UTF_8));
 		}
 	}
 
 
-	/**
-	 * Helps to decode a metadata entry and add the resulting value to the
-	 * output map.
-	 */
-	private class EntryProcessor<T> {
+	private static class EntryExtractor<T> {
+
+		// We only need this to wrap ByteBufs
+		private final static NettyDataBufferFactory bufferFactory =
+				new NettyDataBufferFactory(ByteBufAllocator.DEFAULT);
+
+
+		private final Decoder<T> decoder;
 
 		private final MimeType mimeType;
 
@@ -167,42 +192,27 @@ public class DefaultMetadataExtractor implements MetadataExtractor {
 
 		private final BiConsumer<T, Map<String, Object>> accumulator;
 
-		private final Decoder<T> decoder;
 
-
-		public EntryProcessor(
-				MimeType mimeType, Class<T> targetType,
+		EntryExtractor(Decoder<T> decoder, MimeType mimeType, ResolvableType targetType,
 				BiConsumer<T, Map<String, Object>> accumulator) {
 
-			this(mimeType, ResolvableType.forClass(targetType), accumulator);
-		}
-
-		public EntryProcessor(
-				MimeType mimeType, ParameterizedTypeReference<T> targetType,
-				BiConsumer<T, Map<String, Object>> accumulator) {
-
-			this(mimeType, ResolvableType.forType(targetType), accumulator);
-		}
-
-		private EntryProcessor(
-				MimeType mimeType, ResolvableType targetType,
-				BiConsumer<T, Map<String, Object>> accumulator) {
-
+			this.decoder = decoder;
 			this.mimeType = mimeType;
 			this.targetType = targetType;
 			this.accumulator = accumulator;
-			this.decoder = rsocketStrategies.decoder(targetType, mimeType);
 		}
 
 
-		public void process(ByteBuf byteBuf, Map<String, Object> result) {
-			DataBufferFactory factory = rsocketStrategies.dataBufferFactory();
-			DataBuffer buffer =  factory instanceof NettyDataBufferFactory ?
-					((NettyDataBufferFactory) factory).wrap(byteBuf) :
-					factory.wrap(byteBuf.nioBuffer());
-
-			T value = this.decoder.decode(buffer, this.targetType, this.mimeType, Collections.emptyMap());
+		public void extract(ByteBuf content, Map<String, Object> result) {
+			NettyDataBuffer dataBuffer = bufferFactory.wrap(content.retain());
+			T value = this.decoder.decode(dataBuffer, this.targetType, this.mimeType, Collections.emptyMap());
 			this.accumulator.accept(value, result);
+		}
+
+
+		@Override
+		public String toString() {
+			return "mimeType=" + this.mimeType + ", targetType=" + this.targetType;
 		}
 	}
 

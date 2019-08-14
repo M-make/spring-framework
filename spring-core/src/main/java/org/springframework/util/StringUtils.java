@@ -61,6 +61,8 @@ import org.springframework.lang.Nullable;
 @SuppressWarnings("Duplicates")
 public abstract class StringUtils {
 
+	private static final String[] EMPTY_STRING_ARRAY = {};
+
 	private static final String FOLDER_SEPARATOR = "/";
 
 	private static final String WINDOWS_FOLDER_SEPARATOR = "\\";
@@ -905,7 +907,7 @@ public abstract class StringUtils {
 	 * @return the resulting {@code String} array
 	 */
 	public static String[] toStringArray(@Nullable Collection<String> collection) {
-		return (collection != null ? collection.toArray(new String[0]) : new String[0]);
+		return (!CollectionUtils.isEmpty(collection) ? collection.toArray(EMPTY_STRING_ARRAY) : EMPTY_STRING_ARRAY);
 	}
 
 	/**
@@ -916,7 +918,7 @@ public abstract class StringUtils {
 	 * @return the resulting {@code String} array
 	 */
 	public static String[] toStringArray(@Nullable Enumeration<String> enumeration) {
-		return (enumeration != null ? toStringArray(Collections.list(enumeration)) : new String[0]);
+		return (enumeration != null ? toStringArray(Collections.list(enumeration)) : EMPTY_STRING_ARRAY);
 	}
 
 	/**
@@ -1158,7 +1160,7 @@ public abstract class StringUtils {
 			@Nullable String str, String delimiters, boolean trimTokens, boolean ignoreEmptyTokens) {
 
 		if (str == null) {
-			return new String[0];
+			return EMPTY_STRING_ARRAY;
 		}
 
 		StringTokenizer st = new StringTokenizer(str, delimiters);
@@ -1211,7 +1213,7 @@ public abstract class StringUtils {
 			@Nullable String str, @Nullable String delimiter, @Nullable String charsToDelete) {
 
 		if (str == null) {
-			return new String[0];
+			return EMPTY_STRING_ARRAY;
 		}
 		if (delimiter == null) {
 			return new String[] {str};

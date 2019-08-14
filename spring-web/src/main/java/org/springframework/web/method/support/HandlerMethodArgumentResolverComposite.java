@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -41,8 +38,6 @@ import org.springframework.web.context.request.NativeWebRequest;
  */
 @SuppressWarnings("Duplicates")
 public class HandlerMethodArgumentResolverComposite implements HandlerMethodArgumentResolver {
-
-	protected final Log logger = LogFactory.getLog(getClass());
 
 	private final List<HandlerMethodArgumentResolver> argumentResolvers = new LinkedList<>();
 
@@ -62,7 +57,9 @@ public class HandlerMethodArgumentResolverComposite implements HandlerMethodArgu
 	 * Add the given {@link HandlerMethodArgumentResolver HandlerMethodArgumentResolvers}.
 	 * @since 4.3
 	 */
-	public HandlerMethodArgumentResolverComposite addResolvers(@Nullable HandlerMethodArgumentResolver... resolvers) {
+	public HandlerMethodArgumentResolverComposite addResolvers(
+			@Nullable HandlerMethodArgumentResolver... resolvers) {
+
 		if (resolvers != null) {
 			Collections.addAll(this.argumentResolvers, resolvers);
 		}
@@ -108,10 +105,9 @@ public class HandlerMethodArgumentResolverComposite implements HandlerMethodArgu
 
 	/**
 	 * Iterate over registered
-	 * {@link HandlerMethodArgumentResolver HandlerMethodArgumentResolvers} and
-	 * invoke the one that supports it.
-	 * @throws IllegalStateException if no suitable
-	 * {@link HandlerMethodArgumentResolver} is found.
+	 * {@link HandlerMethodArgumentResolver HandlerMethodArgumentResolvers}
+	 * and invoke the one that supports it.
+	 * @throws IllegalArgumentException if no suitable argument resolver is found
 	 */
 	@Override
 	@Nullable
@@ -120,9 +116,8 @@ public class HandlerMethodArgumentResolverComposite implements HandlerMethodArgu
 
 		HandlerMethodArgumentResolver resolver = getArgumentResolver(parameter);
 		if (resolver == null) {
-			throw new IllegalArgumentException(
-					"Unsupported parameter type [" + parameter.getParameterType().getName() + "]." +
-							" supportsParameter should be called first.");
+			throw new IllegalArgumentException("Unsupported parameter type [" +
+					parameter.getParameterType().getName() + "]. supportsParameter should be called first.");
 		}
 		return resolver.resolveArgument(parameter, mavContainer, webRequest, binderFactory);
 	}
@@ -137,9 +132,9 @@ public class HandlerMethodArgumentResolverComposite implements HandlerMethodArgu
 	private HandlerMethodArgumentResolver getArgumentResolver(MethodParameter parameter) {
 		HandlerMethodArgumentResolver result = this.argumentResolverCache.get(parameter);
 		if (result == null) {
-			for (HandlerMethodArgumentResolver methodArgumentResolver : this.argumentResolvers) {
-				if (methodArgumentResolver.supportsParameter(parameter)) {
-					result = methodArgumentResolver;
+			for (HandlerMethodArgumentResolver resolver : this.argumentResolvers) {
+				if (resolver.supportsParameter(parameter)) {
+					result = resolver;
 					this.argumentResolverCache.put(parameter, result);
 					break;
 				}

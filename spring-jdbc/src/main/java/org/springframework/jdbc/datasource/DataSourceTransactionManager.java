@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -423,13 +423,9 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 
 		// 强制只读
 		if (isEnforceReadOnly() && definition.isReadOnly()) {
-			Statement stmt = con.createStatement();
-			try {
+			try (Statement stmt = con.createStatement()) {
 				// 数据库指定当前连接是只读的
 				stmt.executeUpdate("SET TRANSACTION READ ONLY");
-			}
-			finally {
-				stmt.close();
 			}
 		}
 	}

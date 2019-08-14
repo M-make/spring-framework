@@ -132,6 +132,13 @@ public class AntPathMatcherTests {
 		assertThat(pathMatcher.match("/{bla}.*", "/testing.html")).isTrue();
 	}
 
+	@Test
+	public void matchWithNullPath() {
+		assertThat(pathMatcher.match("/test", null)).isFalse();
+		assertThat(pathMatcher.match("/", null)).isFalse();
+		assertThat(pathMatcher.match(null, null)).isFalse();
+	}
+
 	// SPR-14247
 	@Test
 	public void matchWithTrimTokensEnabled() throws Exception {
@@ -141,7 +148,7 @@ public class AntPathMatcherTests {
 	}
 
 	@Test
-	public void withMatchStart() {
+	public void matchStart() {
 		// test exact matching
 		assertThat(pathMatcher.matchStart("test", "test")).isTrue();
 		assertThat(pathMatcher.matchStart("/test", "/test")).isTrue();
@@ -686,8 +693,14 @@ public class AntPathMatcherTests {
 		assertThat(pathMatcher.isPattern("/test/**/name")).isTrue();
 		assertThat(pathMatcher.isPattern("/test?")).isTrue();
 		assertThat(pathMatcher.isPattern("/test/{name}")).isTrue();
+
 		assertThat(pathMatcher.isPattern("/test/name")).isFalse();
 		assertThat(pathMatcher.isPattern("/test/foo{bar")).isFalse();
+	}
+
+	@Test // gh-23297
+	public void isPatternWithNullPath() {
+		assertThat(pathMatcher.isPattern(null)).isFalse();
 	}
 
 }

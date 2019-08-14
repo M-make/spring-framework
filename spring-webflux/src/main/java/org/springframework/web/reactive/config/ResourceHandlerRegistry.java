@@ -155,10 +155,7 @@ public class ResourceHandlerRegistry {
 				urlMap.put(pathPattern, handler);
 			}
 		}
-		SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
-		handlerMapping.setOrder(this.order);
-		handlerMapping.setUrlMap(urlMap);
-		return handlerMapping;
+		return new SimpleUrlHandlerMapping(urlMap, this.order);
 	}
 
 }

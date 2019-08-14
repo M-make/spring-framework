@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
 import org.reactivestreams.Publisher;
@@ -35,6 +36,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.util.MultiValueMap;
@@ -306,11 +308,6 @@ public interface WebClient {
 		Builder exchangeFunction(ExchangeFunction exchangeFunction);
 
 		/**
-		 * Clone this {@code WebClient.Builder}.
-		 */
-		Builder clone();
-
-		/**
 		 * Apply the given {@code Consumer} to this builder instance.
 		 * <p>This can be useful for applying pre-packaged customizations.
 		 * @param builderConsumer the consumer to apply
@@ -318,16 +315,19 @@ public interface WebClient {
 		Builder apply(Consumer<Builder> builderConsumer);
 
 		/**
+		 * Clone this {@code WebClient.Builder}.
+		 */
+		Builder clone();
+
+		/**
 		 * Builder the {@link WebClient} instance.
 		 */
 		WebClient build();
-
 	}
 
 
 	/**
 	 * Contract for specifying the URI for a request.
-	 *
 	 * @param <S> a self reference to the spec type
 	 */
 	interface UriSpec<S extends RequestHeadersSpec<?>> {
@@ -368,7 +368,6 @@ public interface WebClient {
 
 	/**
 	 * Contract for specifying request headers leading up to the exchange.
-	 *
 	 * @param <S> a self reference to the spec type
 	 */
 	interface RequestHeadersSpec<S extends RequestHeadersSpec<S>> {
@@ -664,6 +663,7 @@ public interface WebClient {
 		RequestHeadersSpec<?> syncBody(Object body);
 	}
 
+
 	/**
 	 * Contract for specifying response operations following the exchange.
 	 */
@@ -671,19 +671,41 @@ public interface WebClient {
 
 		/**
 		 * Register a custom error function that gets invoked when the given {@link HttpStatus}
-		 * predicate applies. The exception returned from the function will be returned from
-		 * {@link #bodyToMono(Class)} and {@link #bodyToFlux(Class)}.
-		 * <p>By default, an error handler is register that throws a
+		 * predicate applies. Whatever exception is returned from the function (possibly using
+		 * {@link ClientResponse#createException()}) will also be returned as error signal
+		 * from {@link #bodyToMono(Class)} and {@link #bodyToFlux(Class)}.
+		 * <p>By default, an error handler is registered that returns a
 		 * {@link WebClientResponseException} when the response status code is 4xx or 5xx.
+		 * To override this default (and return a non-error response from {@code bodyOn*}), register
+		 * an exception function that returns an {@linkplain Mono#empty() empty} mono.
+		 * <p><strong>NOTE:</strong> if the response is expected to have content,
+		 * the exceptionFunction should consume it. If not, the content will be
+		 * automatically drained to ensure resources are released.
 		 * @param statusPredicate a predicate that indicates whether {@code exceptionFunction}
 		 * applies
+		 * @param exceptionFunction the function that returns the exception
+		 * @return this builder
+		 * @see ClientResponse#createException()
+		 */
+		ResponseSpec onStatus(Predicate<HttpStatus> statusPredicate,
+				Function<ClientResponse, Mono<? extends Throwable>> exceptionFunction);
+
+		/**
+		 * Register a custom error function that gets invoked when the given raw status code
+		 * predicate applies. The exception returned from the function will be returned from
+		 * {@link #bodyToMono(Class)} and {@link #bodyToFlux(Class)}.
+		 * <p>By default, an error handler is registered that throws a
+		 * {@link WebClientResponseException} when the response status code is 4xx or 5xx.
+		 * @param statusCodePredicate a predicate of the raw status code that indicates
+		 * whether {@code exceptionFunction} applies.
 		 * <p><strong>NOTE:</strong> if the response is expected to have content,
 		 * the exceptionFunction should consume it. If not, the content will be
 		 * automatically drained to ensure resources are released.
 		 * @param exceptionFunction the function that returns the exception
 		 * @return this builder
+		 * @since 5.1.9
 		 */
-		ResponseSpec onStatus(Predicate<HttpStatus> statusPredicate,
+		ResponseSpec onRawStatus(IntPredicate statusCodePredicate,
 				Function<ClientResponse, Mono<? extends Throwable>> exceptionFunction);
 
 		/**
@@ -730,17 +752,62 @@ public interface WebClient {
 		 */
 		<T> Flux<T> bodyToFlux(ParameterizedTypeReference<T> elementTypeRef);
 
+		/**
+		 * Return the response as a delayed {@code ResponseEntity}. By default, if the response has
+		 * status code 4xx or 5xx, the {@code Mono} will contain a {@link WebClientException}. This
+		 * can be overridden with {@link #onStatus(Predicate, Function)}.
+		 * @param bodyClass the expected response body type
+		 * @param <T> response body type
+		 * @return {@code Mono} with the {@code ResponseEntity}
+		 * @since 5.2
+		 */
+		<T> Mono<ResponseEntity<T>> toEntity(Class<T> bodyClass);
+
+		/**
+		 * Return the response as a delayed {@code ResponseEntity}. By default, if the response has
+		 * status code 4xx or 5xx, the {@code Mono} will contain a {@link WebClientException}. This
+		 * can be overridden with {@link #onStatus(Predicate, Function)}.
+		 * @param bodyTypeReference a type reference describing the expected response body type
+		 * @param <T> response body type
+		 * @return {@code Mono} with the {@code ResponseEntity}
+		 * @since 5.2
+		 */
+		<T> Mono<ResponseEntity<T>> toEntity(ParameterizedTypeReference<T> bodyTypeReference);
+
+		/**
+		 * Return the response as a delayed list of {@code ResponseEntity}s. By default, if the
+		 * response has status code 4xx or 5xx, the {@code Mono} will contain a
+		 * {@link WebClientException}. This can be overridden with
+		 * {@link #onStatus(Predicate, Function)}.
+		 * @param elementClass the expected response body list element class
+		 * @param <T> the type of elements in the list
+		 * @return {@code Mono} with the list of {@code ResponseEntity}s
+		 * @since 5.2
+		 */
+		<T> Mono<ResponseEntity<List<T>>> toEntityList(Class<T> elementClass);
+
+		/**
+		 * Return the response as a delayed list of {@code ResponseEntity}s. By default, if the
+		 * response has status code 4xx or 5xx, the {@code Mono} will contain a
+		 * {@link WebClientException}. This can be overridden with
+		 * {@link #onStatus(Predicate, Function)}.
+		 * @param elementTypeRef the expected response body list element reference type
+		 * @param <T> the type of elements in the list
+		 * @return {@code Mono} with the list of {@code ResponseEntity}s
+		 * @since 5.2
+		 */
+		<T> Mono<ResponseEntity<List<T>>> toEntityList(ParameterizedTypeReference<T> elementTypeRef);
 	}
 
 
 	/**
 	 * Contract for specifying request headers and URI for a request.
-	 *
 	 * @param <S> a self reference to the spec type
 	 */
 	interface RequestHeadersUriSpec<S extends RequestHeadersSpec<S>>
 			extends UriSpec<S>, RequestHeadersSpec<S> {
 	}
+
 
 	/**
 	 * Contract for specifying request headers, body and URI for a request.
