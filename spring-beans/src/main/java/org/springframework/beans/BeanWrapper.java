@@ -36,6 +36,9 @@ import java.beans.PropertyDescriptor;
  * is "false", to avoid side effects caused by getter method invocations.
  * Turn this to "true" to expose present property values to custom editors.
  *
+ *  javaBean 的操作工具，对象的属性赋值
+ *  一般通过 {@link PropertyAccessorFactory#forBeanPropertyAccess(Object)} 方法获取
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 13 April 2001

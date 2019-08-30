@@ -1162,18 +1162,23 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
 		// Make sure bean class is actually resolved at this point.
+		// 获取bean的类型
 		Class<?> beanClass = resolveBeanClass(mbd, beanName);
 
+		// 如果这个类不是public的并且不可以访问非public的公共方法，就抛异常
 		if (beanClass != null && !Modifier.isPublic(beanClass.getModifiers()) && !mbd.isNonPublicAccessAllowed()) {
 			throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 					"Bean class isn't public, and non-public access not allowed: " + beanClass.getName());
 		}
 
+		// 如果有实例化的提供者
 		Supplier<?> instanceSupplier = mbd.getInstanceSupplier();
 		if (instanceSupplier != null) {
+			// BeanWrapper 包装了对示例的属性操作
 			return obtainFromSupplier(instanceSupplier, beanName);
 		}
 
+		// 如果是通过方法实例化的话
 		if (mbd.getFactoryMethodName() != null) {
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
@@ -1226,9 +1231,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	protected BeanWrapper obtainFromSupplier(Supplier<?> instanceSupplier, String beanName) {
 		Object instance;
 
+		// 获取当前创建的bean名称
 		String outerBean = this.currentlyCreatedBean.get();
+		// 设置当前创建的beanName
 		this.currentlyCreatedBean.set(beanName);
 		try {
+			// 通过提供者获取bean
 			instance = instanceSupplier.get();
 		}
 		finally {

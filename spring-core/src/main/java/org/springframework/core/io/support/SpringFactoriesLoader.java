@@ -116,6 +116,8 @@ public final class SpringFactoriesLoader {
 	 * {@code null} to use the default
 	 * @throws IllegalArgumentException if an error occurs while loading factory names
 	 * @see #loadFactories
+	 *
+	 *  根据 factoryType 参数，读取key为factoryType的，在META-INF/spring.factories文件中的数据
 	 */
 	public static List<String> loadFactoryNames(Class<?> factoryType, @Nullable ClassLoader classLoader) {
 		String factoryTypeName = factoryType.getName();
@@ -129,6 +131,7 @@ public final class SpringFactoriesLoader {
 		}
 
 		try {
+			// 读取多个 META-INF/spring.factories 文件
 			Enumeration<URL> urls = (classLoader != null ?
 					classLoader.getResources(FACTORIES_RESOURCE_LOCATION) :
 					ClassLoader.getSystemResources(FACTORIES_RESOURCE_LOCATION));
@@ -136,14 +139,17 @@ public final class SpringFactoriesLoader {
 			while (urls.hasMoreElements()) {
 				URL url = urls.nextElement();
 				UrlResource resource = new UrlResource(url);
+				// 读取每个 META-INF/spring.factories 文件
 				Properties properties = PropertiesLoaderUtils.loadProperties(resource);
 				for (Map.Entry<?, ?> entry : properties.entrySet()) {
 					String factoryTypeName = ((String) entry.getKey()).trim();
 					for (String factoryImplementationName : StringUtils.commaDelimitedListToStringArray((String) entry.getValue())) {
+						// key - 多个Value(用 ',' 隔开) ，添加到result对象中
 						result.add(factoryTypeName, factoryImplementationName.trim());
 					}
 				}
 			}
+			// 缓存所有的读取
 			cache.put(classLoader, result);
 			return result;
 		}
