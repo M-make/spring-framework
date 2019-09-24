@@ -344,3 +344,7 @@ def qualifyVersionIfNecessary(version) {
 	}
 	return version
 }
+
+
+
+checkstyleTest.enabled = false
