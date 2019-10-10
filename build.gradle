@@ -253,11 +253,11 @@ configure(subprojects.findAll { (it.name != "spring-core-coroutines") } ) { subp
 //		from javadoc
 //	}
 
-	artifacts {
-		archives sourcesJar
-
-//		archives javadocJar
-	}
+//	artifacts {
+//		archives sourcesJar
+//
+////		archives javadocJar
+//	}
 }
 
 configure(rootProject) {
