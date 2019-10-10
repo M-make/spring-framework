@@ -348,3 +348,4 @@ def qualifyVersionIfNecessary(version) {
 
 
 checkstyleTest.enabled = false
+checkstyleNohttp.enabled = false
