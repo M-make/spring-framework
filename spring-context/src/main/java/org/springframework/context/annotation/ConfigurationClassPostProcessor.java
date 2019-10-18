@@ -65,6 +65,9 @@ import java.util.*;
  * their corresponding bean definitions registered before any other
  * {@link BeanFactoryPostProcessor} executes.
  *
+ *
+ *  	这个类处理所有的@configuration 是启动扫描器，将所有的类扫描的重要类
+ *
  * @author Chris Beams
  * @author Juergen Hoeller
  * @author Phillip Webb

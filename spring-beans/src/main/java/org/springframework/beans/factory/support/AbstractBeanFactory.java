@@ -257,10 +257,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				String[] dependsOn = mbd.getDependsOn();
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {
+						// 检测重复依赖
 						if (isDependent(beanName, dep)) {
 							throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 									"Circular depends-on relationship between '" + beanName + "' and '" + dep + "'");
 						}
+						// 表名关系，在容器中存储  依赖的bean->bean 的关系，主要是为了上面判断循环依赖的问题
 						registerDependentBean(dep, beanName);
 						try {
 							getBean(dep);
