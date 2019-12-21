@@ -291,7 +291,7 @@ configure(allprojects) { project ->
 		resolutionStrategy {
 			cacheChangingModulesFor 0, "seconds"
 		}
-		repositories {
+		tories {
 			mavenCentral()
 			maven { url "https://repo.spring.io/libs-spring-framework-build" }
 		}
@@ -299,7 +299,7 @@ configure(allprojects) { project ->
 	configurations.all {
 		resolutionStrategy {
 			cacheChangingModulesFor 0, "seconds"
-			cacheDynamicVersionsFor 0, "seconds"
+			cacheDynamicVersionsFreposior 0, "seconds"
 		}
 	}
 }
