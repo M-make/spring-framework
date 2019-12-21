@@ -101,8 +101,12 @@ public final class ModelFactory {
 	public void initModel(NativeWebRequest request, ModelAndViewContainer container, HandlerMethod handlerMethod)
 			throws Exception {
 
+		// 从session 里面提取 @SessionAttributes 标记的数据 ， 如果没有则为空
 		Map<String, ?> sessionAttributes = this.sessionAttributesHandler.retrieveAttributes(request);
+		// 加入到model 的map里面
 		container.mergeAttributes(sessionAttributes);
+
+		// 调用@modelAttribute方法，并将返回的数据放入mav容器
 		invokeModelAttributeMethods(request, container);
 
 		for (String name : findSessionAttributeArguments(handlerMethod)) {
@@ -134,6 +138,7 @@ public final class ModelFactory {
 				continue;
 			}
 
+			// 调用@ModelAttribute 注解方法
 			Object returnValue = modelMethod.invokeForRequest(request, container);
 			if (!modelMethod.isVoid()){
 				String returnValueName = getNameForReturnValue(returnValue, modelMethod.getReturnType());
@@ -148,12 +153,18 @@ public final class ModelFactory {
 	}
 
 	private ModelMethod getNextModelMethod(ModelAndViewContainer container) {
+		// 遍历 @ModelAttribute 注解的方法
+		// 挨个查找每个元素是否在flashMap中含有，如果有的话，这个元素对应的@ModelAttribute就不会初始化掉
 		for (ModelMethod modelMethod : this.modelMethods) {
+
+			// 检查该modelHandler 是否在flashMap中含有
 			if (modelMethod.checkDependencies(container)) {
 				this.modelMethods.remove(modelMethod);
+				// 含有该modelHandler，就返回这个
 				return modelMethod;
 			}
 		}
+		// 如果在flashMap中没有值，则返回第一个modelMethod
 		ModelMethod modelMethod = this.modelMethods.get(0);
 		this.modelMethods.remove(modelMethod);
 		return modelMethod;
@@ -280,6 +291,7 @@ public final class ModelFactory {
 		public ModelMethod(InvocableHandlerMethod handlerMethod) {
 			this.handlerMethod = handlerMethod;
 			for (MethodParameter parameter : handlerMethod.getMethodParameters()) {
+				// 将方法上带有@ModelAttribute注解的参数，添加到方法依赖中去
 				if (parameter.hasParameterAnnotation(ModelAttribute.class)) {
 					this.dependencies.add(getNameForParameter(parameter));
 				}
@@ -292,6 +304,7 @@ public final class ModelFactory {
 
 		public boolean checkDependencies(ModelAndViewContainer mavContainer) {
 			for (String name : this.dependencies) {
+				// mav 不含有 该依赖，就返回false，只要有一个不含有，则返回false
 				if (!mavContainer.containsAttribute(name)) {
 					return false;
 				}

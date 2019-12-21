@@ -113,24 +113,38 @@ public class DispatcherHandler implements WebHandler, ApplicationContextAware {
 
 
 	protected void initStrategies(ApplicationContext context) {
+		// 获取所有的handlerMapping
 		Map<String, HandlerMapping> mappingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(
 				context, HandlerMapping.class, true, false);
 
 		ArrayList<HandlerMapping> mappings = new ArrayList<>(mappingBeans.values());
+		// 排序
 		AnnotationAwareOrderComparator.sort(mappings);
 		this.handlerMappings = Collections.unmodifiableList(mappings);
 
+		// 获取所有的handlerAdapter
 		Map<String, HandlerAdapter> adapterBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(
 				context, HandlerAdapter.class, true, false);
 
 		this.handlerAdapters = new ArrayList<>(adapterBeans.values());
+		// 排序
 		AnnotationAwareOrderComparator.sort(this.handlerAdapters);
 
+		// 获取所有的handlerResultHandler
 		Map<String, HandlerResultHandler> beans = BeanFactoryUtils.beansOfTypeIncludingAncestors(
 				context, HandlerResultHandler.class, true, false);
 
 		this.resultHandlers = new ArrayList<>(beans.values());
+		// 排序
 		AnnotationAwareOrderComparator.sort(this.resultHandlers);
+
+		/*
+		  1.HandlerMapping 的作用：主要是根据request对象，找到实际的处理对象，比如
+		  根据 /test这个uri，就会找到@requestMapping("/test")注解的方法
+		  2.HandlerAdapter作用：对实际的处理对象，真正调用方法前做一些适配的工作，比如
+		  方法参数的解析，返回值的适配(由java对象转为reactor对象)
+		  3.HandleResultHandler作用：对返回值的解析，解析模板页面，解析对象成json串等等
+		 */
 	}
 
 
@@ -140,6 +154,7 @@ public class DispatcherHandler implements WebHandler, ApplicationContextAware {
 			return createNotFoundError();
 		}
 		return Flux.fromIterable(this.handlerMappings)
+				// 将所有的handlerMapping 调用 getHandler 方法
 				.concatMap(mapping -> mapping.getHandler(exchange))
 				.next()
 				.switchIfEmpty(createNotFoundError())

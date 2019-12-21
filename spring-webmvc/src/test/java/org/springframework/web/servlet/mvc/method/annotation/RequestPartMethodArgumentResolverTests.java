@@ -178,6 +178,25 @@ public class RequestPartMethodArgumentResolverTests {
 	}
 
 	@Test
+	public void testInterface() throws Exception{
+		LocalVariableTableParameterNameDiscoverer l = new LocalVariableTableParameterNameDiscoverer();
+		String[] tests = l.getParameterNames(TstC.class.getDeclaredMethod("test", String.class));
+		for (String test : tests) {
+			System.out.println(test);
+		}
+	}
+
+	interface Tst{
+		void test(String name);
+	}
+
+	class TstC{
+	   public void test(String name){
+
+	   }
+	}
+
+	@Test
 	public void resolveMultipartFileList() throws Exception {
 		Object actual = resolver.resolveArgument(paramMultipartFileList, null, webRequest, null);
 		boolean condition = actual instanceof List;

@@ -99,10 +99,12 @@ public class ServletRequestDataBinder extends WebDataBinder {
 	 */
 	public void bind(ServletRequest request) {
 		MutablePropertyValues mpvs = new ServletRequestParameterPropertyValues(request);
+		// 检查是否含有 文件上传，如果是文件上传的话，可以转换，或者可以获取MultipartRequest
 		MultipartRequest multipartRequest = WebUtils.getNativeRequest(request, MultipartRequest.class);
 		if (multipartRequest != null) {
 			bindMultipart(multipartRequest.getMultiFileMap(), mpvs);
 		}
+		// 将uri 模板的数据加入到 mpvs
 		addBindValues(mpvs, request);
 		doBind(mpvs);
 	}

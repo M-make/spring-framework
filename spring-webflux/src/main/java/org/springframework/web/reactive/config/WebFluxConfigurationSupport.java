@@ -24,7 +24,6 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanInitializationException;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
@@ -119,23 +118,32 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 		return new WebFluxResponseStatusExceptionHandler();
 	}
 
+	/**
+	 *  配置支持@requestMapping 的HandlerMapping
+	 *
+	 *  order：0
+	 */
 	@Bean
 	public RequestMappingHandlerMapping requestMappingHandlerMapping(
-			@Qualifier("webFluxContentTypeResolver") RequestedContentTypeResolver contentTypeResolver) {
+			RequestedContentTypeResolver webFluxContentTypeResolver) {
 		RequestMappingHandlerMapping mapping = createRequestMappingHandlerMapping();
+		// 设置handlerMapping的处理顺序
 		mapping.setOrder(0);
-		mapping.setContentTypeResolver(contentTypeResolver);
+		mapping.setContentTypeResolver(webFluxContentTypeResolver);
 		mapping.setCorsConfigurations(getCorsConfigurations());
-
+		// 设置handlerMapping的路径匹配规则
 		PathMatchConfigurer configurer = getPathMatchConfigurer();
+		// 匹配时，是否忽略最后的'/' 也就是 /user 也匹配 /user/
 		Boolean useTrailingSlashMatch = configurer.isUseTrailingSlashMatch();
 		if (useTrailingSlashMatch != null) {
 			mapping.setUseTrailingSlashMatch(useTrailingSlashMatch);
 		}
+
 		Boolean useCaseSensitiveMatch = configurer.isUseCaseSensitiveMatch();
 		if (useCaseSensitiveMatch != null) {
 			mapping.setUseCaseSensitiveMatch(useCaseSensitiveMatch);
 		}
+		// 为@Controller 设置路径前缀
 		Map<String, Predicate<Class<?>>> pathPrefixes = configurer.getPathPrefixes();
 		if (pathPrefixes != null) {
 			mapping.setPathPrefixes(pathPrefixes);
@@ -202,6 +210,11 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 	public void configurePathMatching(PathMatchConfigurer configurer) {
 	}
 
+	/**
+	 *  配置支持 RouterFunction 的 HandlerMapping
+	 *
+	 *   order：-1
+	 */
 	@Bean
 	public RouterFunctionMapping routerFunctionMapping(ServerCodecConfigurer serverCodecConfigurer) {
 		RouterFunctionMapping mapping = createRouterFunctionMapping();
@@ -223,6 +236,9 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 	 * Return a handler mapping ordered at Integer.MAX_VALUE-1 with mapped
 	 * resource handlers. To configure resource handling, override
 	 * {@link #addResourceHandlers}.
+	 *
+	 *  配置支持解析 Resource的HandlerMapping
+	 *  order：Ordered.LOWEST_PRECEDENCE - 1  (默认为最低 -1，其实也差不多是最低的 )
 	 */
 	@Bean
 	public HandlerMapping resourceHandlerMapping(ResourceUrlProvider resourceUrlProvider) {
@@ -232,6 +248,7 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 		}
 		ResourceHandlerRegistry registry = new ResourceHandlerRegistry(resourceLoader);
 		registry.setResourceUrlProvider(resourceUrlProvider);
+		// 添加自定义的ResourceHandler
 		addResourceHandlers(registry);
 
 		AbstractHandlerMapping handlerMapping = registry.getHandlerMapping();
@@ -266,14 +283,14 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 
 	@Bean
 	public RequestMappingHandlerAdapter requestMappingHandlerAdapter(
-			@Qualifier("webFluxAdapterRegistry") ReactiveAdapterRegistry reactiveAdapterRegistry,
+			ReactiveAdapterRegistry webFluxAdapterRegistry,
 			ServerCodecConfigurer serverCodecConfigurer,
-			@Qualifier("webFluxConversionService") FormattingConversionService conversionService,
-			@Qualifier("webFluxValidator") Validator validator) {
+			FormattingConversionService webFluxConversionService,
+			Validator webfluxValidator) {
 		RequestMappingHandlerAdapter adapter = createRequestMappingHandlerAdapter();
 		adapter.setMessageReaders(serverCodecConfigurer.getReaders());
-		adapter.setWebBindingInitializer(getConfigurableWebBindingInitializer(conversionService, validator));
-		adapter.setReactiveAdapterRegistry(reactiveAdapterRegistry);
+		adapter.setWebBindingInitializer(getConfigurableWebBindingInitializer(webFluxConversionService, webfluxValidator));
+		adapter.setReactiveAdapterRegistry(webFluxAdapterRegistry);
 
 		ArgumentResolverConfigurer configurer = new ArgumentResolverConfigurer();
 		configureArgumentResolvers(configurer);
@@ -427,30 +444,30 @@ public class WebFluxConfigurationSupport implements ApplicationContextAware {
 
 	@Bean
 	public ResponseEntityResultHandler responseEntityResultHandler(
-			@Qualifier("webFluxAdapterRegistry") ReactiveAdapterRegistry reactiveAdapterRegistry,
+			ReactiveAdapterRegistry webFluxAdapterRegistry,
 			ServerCodecConfigurer serverCodecConfigurer,
-			@Qualifier("webFluxContentTypeResolver") RequestedContentTypeResolver contentTypeResolver) {
+			RequestedContentTypeResolver webFluxContentTypeResolver) {
 		return new ResponseEntityResultHandler(serverCodecConfigurer.getWriters(),
-				contentTypeResolver, reactiveAdapterRegistry);
+				webFluxContentTypeResolver, webFluxAdapterRegistry);
 	}
 
 	@Bean
 	public ResponseBodyResultHandler responseBodyResultHandler(
-			@Qualifier("webFluxAdapterRegistry") ReactiveAdapterRegistry reactiveAdapterRegistry,
+			ReactiveAdapterRegistry webFluxAdapterRegistry,
 			ServerCodecConfigurer serverCodecConfigurer,
-			@Qualifier("webFluxContentTypeResolver") RequestedContentTypeResolver contentTypeResolver) {
+			RequestedContentTypeResolver webFluxContentTypeResolver) {
 		return new ResponseBodyResultHandler(serverCodecConfigurer.getWriters(),
-				contentTypeResolver, reactiveAdapterRegistry);
+				webFluxContentTypeResolver, webFluxAdapterRegistry);
 	}
 
 	@Bean
 	public ViewResolutionResultHandler viewResolutionResultHandler(
-			@Qualifier("webFluxAdapterRegistry") ReactiveAdapterRegistry reactiveAdapterRegistry,
-			@Qualifier("webFluxContentTypeResolver") RequestedContentTypeResolver contentTypeResolver) {
+			ReactiveAdapterRegistry webFluxAdapterRegistry,
+			RequestedContentTypeResolver webFluxContentTypeResolver) {
 		ViewResolverRegistry registry = getViewResolverRegistry();
 		List<ViewResolver> resolvers = registry.getViewResolvers();
 		ViewResolutionResultHandler handler = new ViewResolutionResultHandler(
-				resolvers, contentTypeResolver, reactiveAdapterRegistry);
+				resolvers, webFluxContentTypeResolver, webFluxAdapterRegistry);
 		handler.setDefaultViews(registry.getDefaultViews());
 		handler.setOrder(registry.getOrder());
 		return handler;

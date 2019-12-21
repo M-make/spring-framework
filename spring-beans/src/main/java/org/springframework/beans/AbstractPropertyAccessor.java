@@ -82,6 +82,27 @@ public abstract class AbstractPropertyAccessor extends TypeConverterSupport impl
 		setPropertyValues(pvs, ignoreUnknown, false);
 	}
 
+	public static void main(String[] args) {
+		A object = new A();
+		BeanWrapperImpl beanWrapper = new BeanWrapperImpl(object);
+		MutablePropertyValues aa = new MutablePropertyValues();
+		aa.add("name","fuck");
+		beanWrapper.setPropertyValues(aa,true,false);
+		System.out.println(object.name);
+	}
+
+	static class A{
+		String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
+
 	@Override
 	public void setPropertyValues(PropertyValues pvs, boolean ignoreUnknown, boolean ignoreInvalid)
 			throws BeansException {

@@ -103,7 +103,10 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 	public void invokeAndHandle(ServletWebRequest webRequest, ModelAndViewContainer mavContainer,
 			Object... providedArgs) throws Exception {
 
+		// @requestMapping 方法调用
 		Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
+
+		// @ResponseStatus 处理
 		setResponseStatus(webRequest);
 
 		if (returnValue == null) {
@@ -121,6 +124,7 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 		mavContainer.setRequestHandled(false);
 		Assert.state(this.returnValueHandlers != null, "No return value handlers");
 		try {
+			// 返回值处理器
 			this.returnValueHandlers.handleReturnValue(
 					returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
 		}
@@ -136,6 +140,7 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 	 * Set the response status according to the {@link ResponseStatus} annotation.
 	 */
 	private void setResponseStatus(ServletWebRequest webRequest) throws IOException {
+		// @ResponseStatus 注解的值
 		HttpStatus status = getResponseStatus();
 		if (status == null) {
 			return;
@@ -145,9 +150,11 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 		if (response != null) {
 			String reason = getResponseStatusReason();
 			if (StringUtils.hasText(reason)) {
+				// 如果有 reason 的值的话，直接返回
 				response.sendError(status.value(), reason);
 			}
 			else {
+				// 设置响应值
 				response.setStatus(status.value());
 			}
 		}

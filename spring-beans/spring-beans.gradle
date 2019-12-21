@@ -1,3 +1,4 @@
+
 description = "Spring Beans"
 
 apply plugin: "groovy"
@@ -15,13 +16,13 @@ dependencies {
 
 // This module does joint compilation for Java and Groovy code with the compileGroovy task.
 sourceSets {
-	main.groovy.srcDirs += "src/main/java"
-	main.java.srcDirs = []
+    main.groovy.srcDirs += "src/main/java"
+    main.java.srcDirs = []
 }
 
 compileGroovy {
-	sourceCompatibility = 1.8
-	targetCompatibility = 1.8
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 }
 
 // This module also builds Kotlin code and the compileKotlin task naturally depends on

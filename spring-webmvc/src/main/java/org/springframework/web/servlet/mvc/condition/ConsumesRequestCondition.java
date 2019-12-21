@@ -213,7 +213,7 @@ public final class ConsumesRequestCondition extends AbstractRequestCondition<Con
 		catch (InvalidMediaTypeException ex) {
 			return null;
 		}
-
+		// 匹配consumer
 		List<ConsumeMediaTypeExpression> result = getMatchingExpressions(contentType);
 		return !CollectionUtils.isEmpty(result) ? new ConsumesRequestCondition(result) : null;
 	}

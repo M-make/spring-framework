@@ -16,18 +16,17 @@
 
 package org.springframework.core;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+import org.springframework.util.StringValueResolver;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
-import org.springframework.util.StringValueResolver;
 
 /**
  * Simple implementation of the {@link AliasRegistry} interface.
@@ -44,6 +43,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	/** Map from alias to canonical name. */
+	// 别名 -> beanName
 	private final Map<String, String> aliasMap = new ConcurrentHashMap<>(16);
 
 
@@ -74,6 +74,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 								registeredName + "' with new target name '" + name + "'");
 					}
 				}
+				// 检查循环依赖
 				checkForAliasCircle(name, alias);
 				this.aliasMap.put(alias, name);
 				if (logger.isTraceEnabled()) {
@@ -93,15 +94,36 @@ public class SimpleAliasRegistry implements AliasRegistry {
 
 	/**
 	 * Determine whether the given name has the given alias registered.
+	 *
+	 * method:
+	 * 	name - alias
+	 * 	get(name) -> preName preAlias
+	 *	if name equals preName
+	 *	if alias equals preAlias  || (preAlias,alias) ------> method
+	 *	return true;
+	 *
+	 * (a,c)
+	 * map(
+	 * 		key: b val: a
+	 * 		key: c val: b
+	 * )
+	 *
+	 *  1  a, c
+	 *  2  b, c  -> return true
+	 *
 	 * @param name the name to check
 	 * @param alias the alias to look for
 	 * @since 4.2.1
 	 */
 	public boolean hasAlias(String name, String alias) {
 		for (Map.Entry<String, String> entry : this.aliasMap.entrySet()) {
+			// beanName
 			String registeredName = entry.getValue();
+			// 如果有两个相同的beanName
 			if (registeredName.equals(name)) {
+				// 别名
 				String registeredAlias = entry.getKey();
+				// 如果别名和参数别名一致
 				if (registeredAlias.equals(alias) || hasAlias(registeredAlias, alias)) {
 					return true;
 				}
@@ -208,6 +230,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 
 	/**
 	 * Determine the raw name, resolving aliases to canonical names.
+	 * 根据别名获取beanName
 	 * @param name the user-specified name
 	 * @return the transformed name
 	 */

@@ -63,20 +63,25 @@ public final class WebAsyncManager {
 
 	private static final Object RESULT_NONE = new Object();
 
+	// 默认的线程池处理，每次new thread 执行
 	private static final AsyncTaskExecutor DEFAULT_TASK_EXECUTOR =
 			new SimpleAsyncTaskExecutor(WebAsyncManager.class.getSimpleName());
 
 	private static final Log logger = LogFactory.getLog(WebAsyncManager.class);
 
+	// Callable 超时拦截器
 	private static final CallableProcessingInterceptor timeoutCallableInterceptor =
 			new TimeoutCallableProcessingInterceptor();
 
+	// 延迟结果的 重试拦截器
 	private static final DeferredResultProcessingInterceptor timeoutDeferredResultInterceptor =
 			new TimeoutDeferredResultProcessingInterceptor();
 
+
+	// 标记是否执行warning 代码
 	private static Boolean taskExecutorWarning = true;
 
-
+	// 异步处理的Request
 	private AsyncWebRequest asyncWebRequest;
 
 	private AsyncTaskExecutor taskExecutor = DEFAULT_TASK_EXECUTOR;
@@ -85,8 +90,10 @@ public final class WebAsyncManager {
 
 	private volatile Object[] concurrentResultContext;
 
+	// Callable 拦截器
 	private final Map<Object, CallableProcessingInterceptor> callableInterceptors = new LinkedHashMap<>();
 
+	// 延迟结果的拦截器
 	private final Map<Object, DeferredResultProcessingInterceptor> deferredResultInterceptors = new LinkedHashMap<>();
 
 
@@ -281,6 +288,7 @@ public final class WebAsyncManager {
 		}
 
 		AsyncTaskExecutor executor = webAsyncTask.getExecutor();
+		// 设置 taskExecutor
 		if (executor != null) {
 			this.taskExecutor = executor;
 		}
@@ -289,23 +297,29 @@ public final class WebAsyncManager {
 		}
 
 		List<CallableProcessingInterceptor> interceptors = new ArrayList<>();
+		// 执行对象自带的拦截器
 		interceptors.add(webAsyncTask.getInterceptor());
+		// 全局拦截器
 		interceptors.addAll(this.callableInterceptors.values());
+		// 超时拦截器，默认直接抛异常
 		interceptors.add(timeoutCallableInterceptor);
 
 		final Callable<?> callable = webAsyncTask.getCallable();
 		final CallableInterceptorChain interceptorChain = new CallableInterceptorChain(interceptors);
 
+		// 请求超时对象，超时处理器
 		this.asyncWebRequest.addTimeoutHandler(() -> {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Async request timeout for " + formatRequestUri());
 			}
 			Object result = interceptorChain.triggerAfterTimeout(this.asyncWebRequest, callable);
+			// 不是默认值
 			if (result != CallableProcessingInterceptor.RESULT_NONE) {
 				setConcurrentResultAndDispatch(result);
 			}
 		});
 
+		// 错误处理器
 		this.asyncWebRequest.addErrorHandler(ex -> {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Async request error for " + formatRequestUri() + ": " + ex);
@@ -315,22 +329,28 @@ public final class WebAsyncManager {
 			setConcurrentResultAndDispatch(result);
 		});
 
+		// 完成 处理器
 		this.asyncWebRequest.addCompletionHandler(() ->
 				interceptorChain.triggerAfterCompletion(this.asyncWebRequest, callable));
 
+		// 处理之前调用 org.springframework.web.context.request.async.CallableProcessingInterceptor.beforeConcurrentHandling方法
 		interceptorChain.applyBeforeConcurrentHandling(this.asyncWebRequest, callable);
+		// 将request 与 servlet 容器解绑
 		startAsyncProcessing(processingContext);
 		try {
 			Future<?> future = this.taskExecutor.submit(() -> {
 				Object result = null;
 				try {
+					// 调用org.springframework.web.context.request.async.CallableProcessingInterceptor.preProcess
 					interceptorChain.applyPreProcess(this.asyncWebRequest, callable);
+					// 请求处理
 					result = callable.call();
 				}
 				catch (Throwable ex) {
 					result = ex;
 				}
 				finally {
+					// 处理结果
 					result = interceptorChain.applyPostProcess(this.asyncWebRequest, callable, result);
 				}
 				setConcurrentResultAndDispatch(result);
@@ -344,6 +364,10 @@ public final class WebAsyncManager {
 		}
 	}
 
+	/**
+	 *  打印warning 日志
+	 *  由于默认的taskExecutor或者SyncTaskExecutor 是不建议使用的，所以，会打印warning日志，提示配置taskExecutor
+	 */
 	private void logExecutorWarning() {
 		if (taskExecutorWarning && logger.isWarnEnabled()) {
 			synchronized (DEFAULT_TASK_EXECUTOR) {

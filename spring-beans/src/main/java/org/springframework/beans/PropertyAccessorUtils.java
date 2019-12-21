@@ -85,6 +85,10 @@ public abstract class PropertyAccessorUtils {
 	 * @param last whether to return the last separator rather than the first
 	 * @return the index of the nested property separator, or -1 if none
 	 */
+
+	public static void main(String[] args) {
+		getNestedPropertySeparatorIndex("map[my.key]",false);
+	}
 	private static int getNestedPropertySeparatorIndex(String propertyPath, boolean last) {
 		boolean inKey = false;
 		int length = propertyPath.length();

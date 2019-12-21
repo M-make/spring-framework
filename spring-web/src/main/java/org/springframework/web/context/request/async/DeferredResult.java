@@ -57,7 +57,6 @@ public class DeferredResult<T> {
 
 	private static final Log logger = LogFactory.getLog(DeferredResult.class);
 
-
 	@Nullable
 	private final Long timeoutValue;
 

@@ -213,12 +213,13 @@ public class AntPathMatcher implements PathMatcher {
 		if (path == null || path.startsWith(this.pathSeparator) != pattern.startsWith(this.pathSeparator)) {
 			return false;
 		}
-
+		// 获取分段  if pattern = /test/test1/test2  pattDirs = { test , test1 ,test2 }
 		String[] pattDirs = tokenizePattern(pattern);
+		// 全量匹配并且是忽略大小写并且不是潜在匹配（ url里面含有 * , ? , { ）
 		if (fullMatch && this.caseSensitive && !isPotentialMatch(path, pattDirs)) {
 			return false;
 		}
-
+		// 与tokenizePattern方法一样，只不过tokenizePattern有缓存，但是这个没有
 		String[] pathDirs = tokenizePath(path);
 		int pattIdxStart = 0;
 		int pattIdxEnd = pattDirs.length - 1;
@@ -402,10 +403,12 @@ public class AntPathMatcher implements PathMatcher {
 		}
 		if (tokenized == null) {
 			tokenized = tokenizePath(pattern);
+			// 如果cache的数据太多，那么认为，此时不适用cache，关闭cache
 			if (cachePatterns == null && this.tokenizedPatternCache.size() >= CACHE_TURNOFF_THRESHOLD) {
 				// Try to adapt to the runtime situation that we're encountering:
 				// There are obviously too many different patterns coming in here...
 				// So let's turn off the cache since the patterns are unlikely to be reoccurring.
+				// 关闭并清除cache
 				deactivatePatternCache();
 				return tokenized;
 			}
@@ -511,6 +514,7 @@ public class AntPathMatcher implements PathMatcher {
 	@Override
 	public Map<String, String> extractUriTemplateVariables(String pattern, String path) {
 		Map<String, String> variables = new LinkedHashMap<>();
+		// ant 风格的匹配，并填充variables
 		boolean result = doMatch(pattern, path, true, variables);
 		if (!result) {
 			throw new IllegalStateException("Pattern \"" + pattern + "\" is not a match for \"" + path + "\"");

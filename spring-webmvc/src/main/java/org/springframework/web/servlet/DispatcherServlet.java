@@ -62,6 +62,7 @@ import org.springframework.web.context.request.async.WebAsyncUtils;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartResolver;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.util.NestedServletException;
 import org.springframework.web.util.WebUtils;
 
@@ -996,12 +997,60 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * @param request current HTTP request
 	 * @param response current HTTP response
 	 * @throws Exception in case of any kind of processing failure
+	 *
+	 *
+	 *
+	 * 	流程：
+	 * 	Client -> Server -> DispatcherServlet
+	 * 	#doDispatcher{
+	 *
+	 * 	    1.检查文件上传并解析(文件解析，可以是马上解析，也可以是应用的时候解析)
+	 * 	    2.获取{HandlerMapping}，也就是{RequestMapping}注解对应的方法，并且将{MappedInterceptor}与{HandlerMapping}组合,也
+	 * 	    会将Cors拦截放在组合对象{HandlerExecutionChain}中，并且是第一进行拦截的
+	 * 	    3.通过{ HandlerExecutionChain}对象，获取{HandlerMapping}支持的{HandlerAdapter}对象
+	 *      4.进行lastModify的处理
+	 *      5.调用{HandlerExecutionChain.applyPreHandle}方法，也就是调用{MappedInterceptor.preHandle}
+	 *      方法，只要有一个拦截器返回false，那么处理就结束掉，并且调用拦截器的{HandlerExecutionChain.triggerAfterCompletion}
+	 *      ，退出{doDispatch}方法
+	 *		6.调用HandlerAdapter.handle方法，在里面进行{
+	 *		   	1.判断在同一会话中是否进行同步的方法调用处理，这个一般不会，根据Session中的对象进行锁同步 {@link RequestMappingHandlerAdapter#handleInternal(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, org.springframework.web.method.HandlerMethod)}
+	 *		   	2.为handlerMapping 设置，方法参数处理器,返回值处理器,数据绑定工厂
+	 *		}
+	 * 	}
+	 *
+	 * 	首先，客户端http请求Tomcat，然后进入frameworkServlet，调用对应的doGet,doPost方法，然后会调用
+	 * 	DispatcherServlet的doDispatch方法，首先进行，是否是文件上传的解析，如果有文件上传，此时默认会解析，
+	 * 	并将解析的文件对象，组合进入Request，然后根据URL进行HandlerMethod的查找，如果直接根据URL取不到HandlerMethod，
+	 * 	那么就会根据ant表达式，去遍历所有的HandlerMethod匹配，这个时候可能会匹配到多个HandlerMethod，然后取
+	 * 	最接近请求URL的HandlerMethod，如果ant表达式也没匹配到，那么取默认的HandlerMapping，如果默认的也没有，
+	 * 	抛异常，如果取到了，那么将该HandlerMethod与对应的拦截器进行组合获取一个HandlerExecutionChain对象
+	 * 	，拦截器如果为MappedInterceptor，那么只取适配的url的，然后加入Cors拦截器(如果有的话)，然后根据HandlerMethod
+	 * 	获取一个HandlerAdapter对象，调用HandlerExecutionChain的预处理拦截，如果预处理的拦截方法有返回false的话，
+	 * 	调用HandlerExecutionChain的AfterCompletion拦截方法，整个执行流程结束，如果一切正常，
+	 * 	在handlerAdapter调用handle方法，判断执行@requestMapping的方法是否在同一浏览器会话中，同步进行调用，
+	 * 	然后对handlerMethod 设置
+	 *
+	 *
+	 * 	1：解析文件上传
+	 * 	2：在HandlerMapping中获取HandlerMethod，同时对url模板进行解析
+	 * 	3：将HandlerMethod与拦截器进行组合，同时组合Cors
+	 * 	4：根据handlerMethod获取HandlerAdapter
+	 * 	5：执行拦截器的预处理
+	 * 	6：根据Session中的值判断，是否在同一会话中，使用排他锁进行方法调用
+	 * 	7：HandlerMethod组合 参数处理器，返回值处理器
+	 * 	8：执行@requestMapping的方法的参数解析
+	 * 	9：调用@requestMapping方法
+	 * 	10：判断执行方法后，Response的Status是否有变化
+	 * 	11：没有变化，则对返回值进行解析处理
+	 *
+	 *
 	 */
 	protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		HttpServletRequest processedRequest = request;
 		HandlerExecutionChain mappedHandler = null;
 		boolean multipartRequestParsed = false;
 
+		// web 异步处理器
 		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
 
 		try {
@@ -1009,10 +1058,14 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				// 检查是否是文件上传 如果是文件上传会有一个包装类型的request对象
 				processedRequest = checkMultipart(request);
+
+				// 是否是原来的request
 				multipartRequestParsed = (processedRequest != request);
 
 				// Determine handler for the current request.
+				// 查找handlerMapping
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null) {
 					noHandlerFound(processedRequest, response);
@@ -1020,6 +1073,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 
 				// Determine handler adapter for the current request.
+				// 获取handler adapter
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
@@ -1032,18 +1086,23 @@ public class DispatcherServlet extends FrameworkServlet {
 					}
 				}
 
+				// 拦截器 预处理
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
 
 				// Actually invoke the handler.
+				// 真正调用业务方法
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
+				// 异步处理结束方法
 				if (asyncManager.isConcurrentHandlingStarted()) {
 					return;
 				}
 
+				// 设置默认的viewName
 				applyDefaultViewName(processedRequest, mv);
+				// 调用拦截器 org.springframework.web.servlet.HandlerInterceptor.postHandle
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
 			}
 			catch (Exception ex) {
@@ -1064,6 +1123,7 @@ public class DispatcherServlet extends FrameworkServlet {
 					new NestedServletException("Handler processing failed", err));
 		}
 		finally {
+			// 如果是异步处理请求
 			if (asyncManager.isConcurrentHandlingStarted()) {
 				// Instead of postHandle and afterCompletion
 				if (mappedHandler != null) {
@@ -1073,6 +1133,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			else {
 				// Clean up any resources used by a multipart request.
 				if (multipartRequestParsed) {
+					// 清除文件上传
 					cleanupMultipart(processedRequest);
 				}
 			}
@@ -1175,6 +1236,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			}
 			else {
 				try {
+					// 解析文件上传
 					return this.multipartResolver.resolveMultipart(request);
 				}
 				catch (MultipartException ex) {
@@ -1267,6 +1329,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletException {
 		if (this.handlerAdapters != null) {
 			for (HandlerAdapter adapter : this.handlerAdapters) {
+				// 获取支持的handlerAdapter
 				if (adapter.supports(handler)) {
 					return adapter;
 				}
