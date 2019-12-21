@@ -308,7 +308,7 @@ configure([rootProject] + javaProjects) { project ->
 	group = "org.springframework"
 
 	apply plugin: "java"
-	apply plugin: "checkstyle"
+//	apply plugin: "checkstyle"
 	apply plugin: 'org.springframework.build.compile'
 	apply from: "${rootDir}/gradle/ide.gradle"
 
@@ -337,10 +337,10 @@ configure([rootProject] + javaProjects) { project ->
 		systemProperty("io.netty.leakDetection.level", "paranoid")
 	}
 
-	checkstyle {
-		toolVersion = "8.27"
-		configDir = rootProject.file("src/checkstyle")
-	}
+//	checkstyle {
+//		toolVersion = "8.27"
+//		configDir = rootProject.file("src/checkstyle")
+//	}
 
 	dependencies {
 		testCompile("org.junit.jupiter:junit-jupiter-api")
@@ -358,7 +358,7 @@ configure([rootProject] + javaProjects) { project ->
 		// JSR-305 only used for non-required meta-annotations
 		compileOnly("com.google.code.findbugs:jsr305")
 		testCompileOnly("com.google.code.findbugs:jsr305")
-		checkstyle("io.spring.javaformat:spring-javaformat-checkstyle:0.0.15")
+//		checkstyle("io.spring.javaformat:spring-javaformat-checkstyle:0.0.15")
 	}
 
 	ext.javadocLinks = [

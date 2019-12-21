@@ -16,20 +16,15 @@
 
 package org.springframework.web.context.support;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.core.io.Resource;
 import org.springframework.mock.web.test.MockServletContext;
 import org.springframework.tests.sample.beans.TestBean;
+
+import java.io.IOException;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -73,8 +68,8 @@ public class ServletContextSupportTests {
 
 		assertThatExceptionOfType(BeanCreationException.class).isThrownBy(
 				wac::refresh)
-			.withCauseInstanceOf(IllegalStateException.class)
-			.withMessageContaining("myAttr");
+				.withCauseInstanceOf(IllegalStateException.class)
+				.withMessageContaining("myAttr");
 	}
 
 	@Test
@@ -107,8 +102,8 @@ public class ServletContextSupportTests {
 
 		assertThatExceptionOfType(BeanCreationException.class).isThrownBy(
 				wac::refresh)
-			.withCauseInstanceOf(IllegalStateException.class)
-			.withMessageContaining("myParam");
+				.withCauseInstanceOf(IllegalStateException.class)
+				.withMessageContaining("myParam");
 	}
 
 	@Test
