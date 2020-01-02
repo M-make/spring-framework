@@ -16,28 +16,8 @@
 
 package org.springframework.core.annotation;
 
-import java.lang.annotation.Annotation;
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-import javax.annotation.Resource;
-import javax.annotation.meta.When;
-
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.core.annotation.AnnotationUtilsTests.ExtendsBaseClassWithGenericAnnotatedMethod;
 import org.springframework.core.annotation.AnnotationUtilsTests.ImplementsInterfaceWithGenericAnnotatedMethod;
 import org.springframework.core.annotation.AnnotationUtilsTests.WebController;
@@ -48,22 +28,25 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 import org.springframework.util.MultiValueMap;
 
+import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
+import javax.annotation.Resource;
+import javax.annotation.meta.When;
+import java.lang.annotation.*;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.springframework.core.annotation.AnnotatedElementUtils.findAllMergedAnnotations;
-import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotation;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getAllAnnotationAttributes;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getAllMergedAnnotations;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotationAttributes;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getMetaAnnotationTypes;
-import static org.springframework.core.annotation.AnnotatedElementUtils.hasAnnotation;
-import static org.springframework.core.annotation.AnnotatedElementUtils.hasMetaAnnotationTypes;
-import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
+import static org.springframework.core.annotation.AnnotatedElementUtils.*;
 import static org.springframework.core.annotation.AnnotationUtilsTests.asArray;
 
 /**
@@ -80,6 +63,39 @@ import static org.springframework.core.annotation.AnnotationUtilsTests.asArray;
 class AnnotatedElementUtilsTests {
 
 	private static final String TX_NAME = Transactional.class.getName();
+
+	@TestB
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target({ElementType.TYPE})
+	public @interface TestA {
+		@AliasFor(value = "b1", annotation = TestB.class)
+		String a1() default "testA";
+
+		@AliasFor(value = "b2", annotation = TestB.class)
+		String a2() default "testA";
+	}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target({ElementType.TYPE})
+	public @interface TestB {
+		@AliasFor(value = "b2")
+		String b1() default "testB";
+
+		@AliasFor(value = "b1")
+		String b2() default "testB";
+	}
+
+	@TestA
+	class TestAA {
+	}
+
+	@Test
+	void test1(){
+		// 这里你得到的实例b有两个key，b1和b2，值都是"testA"
+		AnnotationAttributes b = AnnotatedElementUtils.findMergedAnnotationAttributes(TestAA.class, TestB.class, false, true);
+
+		System.out.println(b);
+	}
 
 
 	@Test
