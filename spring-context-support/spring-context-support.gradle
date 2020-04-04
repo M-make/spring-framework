@@ -4,16 +4,16 @@ dependencies {
 	compile(project(":spring-beans"))
 	compile(project(":spring-context"))
 	compile(project(":spring-core"))
-	optional(project(":spring-jdbc"))  // for Quartz support
-	optional(project(":spring-tx"))  // for Quartz support
-	optional("javax.activation:javax.activation-api")
-	optional("javax.mail:javax.mail-api")
-	optional("javax.cache:cache-api")
-	optional("com.github.ben-manes.caffeine:caffeine")
-	optional("net.sf.ehcache:ehcache")
-	optional("org.quartz-scheduler:quartz")
-	optional("org.codehaus.fabric3.api:commonj")
-	optional("org.freemarker:freemarker")
+	compile(project(":spring-jdbc"))  // for Quartz support
+	compile(project(":spring-tx"))  // for Quartz support
+	compile("javax.activation:javax.activation-api")
+	compile("javax.mail:javax.mail-api")
+	compile("javax.cache:cache-api")
+	compile("com.github.ben-manes.caffeine:caffeine")
+	compile("net.sf.ehcache:ehcache")
+	compile("org.quartz-scheduler:quartz")
+	compile("org.codehaus.fabric3.api:commonj")
+	compile("org.freemarker:freemarker")
 	testCompile(project(":spring-context"))
 	testCompile("org.hsqldb:hsqldb")
 	testCompile("org.hibernate:hibernate-validator")
