@@ -16,14 +16,14 @@
 
 package org.springframework.core.annotation;
 
-import java.lang.reflect.AnnotatedElement;
-import java.util.Arrays;
-import java.util.List;
-
 import org.springframework.core.DecoratingProxy;
 import org.springframework.core.OrderComparator;
 import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.lang.Nullable;
+
+import java.lang.reflect.AnnotatedElement;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * {@code AnnotationAwareOrderComparator} is an extension of
@@ -43,6 +43,9 @@ import org.springframework.lang.Nullable;
  * @see org.springframework.core.Ordered
  * @see org.springframework.core.annotation.Order
  * @see javax.annotation.Priority
+ *
+ * 	从小到大的排序
+ *
  */
 public class AnnotationAwareOrderComparator extends OrderComparator {
 
