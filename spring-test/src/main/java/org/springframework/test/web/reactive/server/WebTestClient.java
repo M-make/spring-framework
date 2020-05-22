@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ClientHttpRequest;
+import org.springframework.http.codec.ClientCodecConfigurer;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MultiValueMap;
@@ -443,13 +444,21 @@ public interface WebTestClient {
 		Builder filters(Consumer<List<ExchangeFilterFunction>> filtersConsumer);
 
 		/**
+		 * Configure the codecs for the {@code WebClient} in the
+		 * {@link #exchangeStrategies(ExchangeStrategies) underlying}
+		 * {@code ExchangeStrategies}.
+		 * @param configurer the configurer to apply
+		 * @since 5.1.13
+		 */
+		Builder codecs(Consumer<ClientCodecConfigurer> configurer);
+
+		/**
 		 * Configure the {@link ExchangeStrategies} to use.
-		 * <p>Note that in a scenario where the builder is configured by
-		 * multiple parties, it is preferable to use
-		 * {@link #exchangeStrategies(Consumer)} in order to customize the same
-		 * {@code ExchangeStrategies}. This method here sets the strategies that
-		 * everyone else then can customize.
-		 * <p>By default this is {@link ExchangeStrategies#withDefaults()}.
+		 * <p>For most cases, prefer using {@link #codecs(Consumer)} which allows
+		 * customizing the codecs in the {@code ExchangeStrategies} rather than
+		 * replace them. That ensures multiple parties can contribute to codecs
+		 * configuration.
+		 * <p>By default this is set to {@link ExchangeStrategies#withDefaults()}.
 		 * @param strategies the strategies to use
 		 */
 		Builder exchangeStrategies(ExchangeStrategies strategies);
@@ -459,8 +468,9 @@ public interface WebTestClient {
 		 * {@link #exchangeStrategies(ExchangeStrategies)}. This method is
 		 * designed for use in scenarios where multiple parties wish to update
 		 * the {@code ExchangeStrategies}.
-		 * @since 5.1.12
+		 * @deprecated as of 5.1.13 in favor of {@link #codecs(Consumer)}
 		 */
+		@Deprecated
 		Builder exchangeStrategies(Consumer<ExchangeStrategies.Builder> configurer);
 
 		/**
@@ -648,8 +658,8 @@ public interface WebTestClient {
 
 		/**
 		 * Set the body to the given {@code Object} value. This method invokes the
-		 * {@link WebClient.RequestBodySpec#bodyValue(Object) bodyValue} method
-		 * on the underlying {@code WebClient}.
+		 * {@link org.springframework.web.reactive.function.client.WebClient.RequestBodySpec#bodyValue(Object)
+		 * bodyValue} method on the underlying {@code WebClient}.
 		 * @param body the value to write to the request body
 		 * @return spec for further declaration of the request
 		 * @since 5.2
@@ -683,8 +693,8 @@ public interface WebTestClient {
 
 		/**
 		 * Set the body from the given producer. This method invokes the
-		 * {@link WebClient.RequestBodySpec#body(Object, Class)} method on the
-		 * underlying {@code WebClient}.
+		 * {@link org.springframework.web.reactive.function.client.WebClient.RequestBodySpec#body(Object, Class)
+		 * body(Object, Class)} method on the underlying {@code WebClient}.
 		 * @param producer the producer to write to the request. This must be a
 		 * {@link Publisher} or another producer adaptable to a
 		 * {@code Publisher} via {@link ReactiveAdapterRegistry}
@@ -696,8 +706,8 @@ public interface WebTestClient {
 
 		/**
 		 * Set the body from the given producer. This method invokes the
-		 * {@link WebClient.RequestBodySpec#body(Object, ParameterizedTypeReference)}
-		 * method on the underlying {@code WebClient}.
+		 * {@link org.springframework.web.reactive.function.client.WebClient.RequestBodySpec#body(Object, ParameterizedTypeReference)
+		 * body(Object, ParameterizedTypeReference)} method on the underlying {@code WebClient}.
 		 * @param producer the producer to write to the request. This must be a
 		 * {@link Publisher} or another producer adaptable to a
 		 * {@code Publisher} via {@link ReactiveAdapterRegistry}
@@ -710,8 +720,8 @@ public interface WebTestClient {
 		/**
 		 * Set the body of the request to the given {@code BodyInserter}.
 		 * This method invokes the
-		 * {@link WebClient.RequestBodySpec#body(BodyInserter)} method on the
-		 * underlying {@code WebClient}.
+		 * {@link org.springframework.web.reactive.function.client.WebClient.RequestBodySpec#body(BodyInserter)
+		 * body(BodyInserter)} method on the underlying {@code WebClient}.
 		 * @param inserter the body inserter to use
 		 * @return spec for further declaration of the request
 		 * @see org.springframework.web.reactive.function.BodyInserters
@@ -953,7 +963,7 @@ public interface WebTestClient {
 		 * <p>The XPath expression can be a parameterized string using
 		 * formatting specifiers as defined in {@link String#format}.
 		 * @param expression the XPath expression
-		 * @param namespaces namespaces to use
+		 * @param namespaces the namespaces to use
 		 * @param args arguments to parameterize the expression
 		 * @since 5.1
 		 */

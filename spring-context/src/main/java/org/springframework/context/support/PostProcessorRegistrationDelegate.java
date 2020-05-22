@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.*;
  * Delegate for AbstractApplicationContext's post-processor handling.
  *
  * @author Juergen Hoeller
+ * @author Sam Brannen
  * @since 4.0
  */
 final class PostProcessorRegistrationDelegate {
@@ -271,6 +272,10 @@ final class PostProcessorRegistrationDelegate {
 	}
 
 	private static void sortPostProcessors(List<?> postProcessors, ConfigurableListableBeanFactory beanFactory) {
+		// Nothing to sort?
+		if (postProcessors.size() <= 1) {
+			return;
+		}
 		Comparator<Object> comparatorToUse = null;
 		if (beanFactory instanceof DefaultListableBeanFactory) {
 			comparatorToUse = ((DefaultListableBeanFactory) beanFactory).getDependencyComparator();
