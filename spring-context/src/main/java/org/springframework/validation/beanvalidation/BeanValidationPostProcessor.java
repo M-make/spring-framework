@@ -88,6 +88,7 @@ public class BeanValidationPostProcessor implements BeanPostProcessor, Initializ
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 		if (!this.afterInitialization) {
+			// 利用hibernate的validate进行注解校验
 			doValidate(bean);
 		}
 		return bean;

@@ -46,6 +46,9 @@ import org.springframework.util.StringValueResolver;
  * A {@link org.springframework.core.convert.ConversionService} implementation
  * designed to be configured as a {@link FormatterRegistry}.
  *
+ *  拓展了GenericConversionService
+ *  除了 Convert api之外，另外加入Formatter api，从string到一个类型互转
+ *
  * @author Keith Donald
  * @author Juergen Hoeller
  * @since 3.0
