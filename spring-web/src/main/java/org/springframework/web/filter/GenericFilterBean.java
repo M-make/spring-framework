@@ -78,6 +78,8 @@ import org.springframework.web.util.NestedServletException;
  * @see #addRequiredProperty
  * @see #initFilterBean
  * @see #doFilter
+ *
+ *  简单的标准filter，提供一些spring的东西
  */
 public abstract class GenericFilterBean implements Filter, BeanNameAware, EnvironmentAware,
 		EnvironmentCapable, ServletContextAware, InitializingBean, DisposableBean {

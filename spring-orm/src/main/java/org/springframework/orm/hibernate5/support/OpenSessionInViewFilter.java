@@ -67,6 +67,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * Supports a "sessionFactoryBeanName" filter init-param in {@code web.xml};
  * the default bean name is "sessionFactory".
  *
+ *  hibernate webSession配合数据库的session
+ *
  * @author Juergen Hoeller
  * @since 4.2
  * @see #lookupSessionFactory

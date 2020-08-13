@@ -47,6 +47,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * <p>This filter could be used in conjunction with {@link DelegatingFilterProxy} in order
  * to help with its initialization.
  *
+ *
+ *  检查跨域
+ *
  * @author Sebastien Deleuze
  * @since 4.2
  * @see <a href="https://www.w3.org/TR/cors/">CORS W3C recommendation</a>

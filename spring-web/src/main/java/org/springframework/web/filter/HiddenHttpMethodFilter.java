@@ -50,6 +50,8 @@ import org.springframework.web.util.WebUtils;
  * So typically, put a Spring {@link org.springframework.web.multipart.support.MultipartFilter}
  * <i>before</i> this HiddenHttpMethodFilter in your {@code web.xml} filter chain.
  *
+ *  替换请求方法，主要用于在form表单中，只可以进行get和post，而不是标准的rest
+ *
  * @author Arjen Poutsma
  * @author Juergen Hoeller
  * @since 3.0

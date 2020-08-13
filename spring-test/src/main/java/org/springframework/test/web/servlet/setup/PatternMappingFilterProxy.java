@@ -36,6 +36,8 @@ import org.springframework.web.util.UrlPathHelper;
  * matches the pattern it is mapped to using pattern matching as defined in the
  * Servlet spec.
  *
+ *  在指定的url匹配时调用 执行代理的filter
+ *
  * @author Rob Winch
  * @since 3.2
  */
