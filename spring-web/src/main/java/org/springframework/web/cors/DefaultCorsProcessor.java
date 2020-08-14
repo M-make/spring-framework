@@ -60,7 +60,7 @@ public class DefaultCorsProcessor implements CorsProcessor {
 	@SuppressWarnings("resource")
 	public boolean processRequest(@Nullable CorsConfiguration config, HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
-
+		// http头 key为vary，表示有哪些头可以用
 		Collection<String> varyHeaders = response.getHeaders(HttpHeaders.VARY);
 		if (!varyHeaders.contains(HttpHeaders.ORIGIN)) {
 			response.addHeader(HttpHeaders.VARY, HttpHeaders.ORIGIN);
@@ -71,7 +71,7 @@ public class DefaultCorsProcessor implements CorsProcessor {
 		if (!varyHeaders.contains(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS)) {
 			response.addHeader(HttpHeaders.VARY, HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS);
 		}
-
+		// 如果不是跨域请求
 		if (!CorsUtils.isCorsRequest(request)) {
 			return true;
 		}
@@ -99,6 +99,7 @@ public class DefaultCorsProcessor implements CorsProcessor {
 	 * Invoked when one of the CORS checks failed.
 	 * The default implementation sets the response status to 403 and writes
 	 * "Invalid CORS request" to the response.
+	 *  403拒绝请求
 	 */
 	protected void rejectRequest(ServerHttpResponse response) throws IOException {
 		response.setStatusCode(HttpStatus.FORBIDDEN);

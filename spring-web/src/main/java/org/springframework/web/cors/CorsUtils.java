@@ -43,6 +43,7 @@ public abstract class CorsUtils {
 		if (origin == null) {
 			return false;
 		}
+		// 对比origin的url，如果和请求的不一致(端口，schema，host)则返回true
 		UriComponents originUrl = UriComponentsBuilder.fromOriginHeader(origin).build();
 		String scheme = request.getScheme();
 		String host = request.getServerName();
