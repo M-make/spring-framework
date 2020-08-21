@@ -893,6 +893,10 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			// 延迟结果拦截器
 			asyncManager.registerDeferredResultInterceptors(this.deferredResultInterceptors);
 
+			// 如果在controller返回的异步的结果，则mvc会调用servlet容器的javax.servlet.ServletRequest.startAsync()
+			// 将web服务器的连接挂起(处理该连接的线程就可以服务别的线程了)，然后在controller异步处理完成之后，mvc会调用
+			// javax.servlet.AsyncContext.dispatch()，将之前挂起的请求重新在servlet进行分发，然后这里的代码就会判断
+			// 是否已经存在异步处理的结果，如果有的话，不进行controller调度，直接处理之前的返回值即可
 			if (asyncManager.hasConcurrentResult()) {
 				Object result = asyncManager.getConcurrentResult();
 				mavContainer = (ModelAndViewContainer) asyncManager.getConcurrentResultContext()[0];

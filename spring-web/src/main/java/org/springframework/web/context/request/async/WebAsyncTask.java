@@ -32,6 +32,8 @@ import org.springframework.web.context.request.NativeWebRequest;
  * @author Juergen Hoeller
  * @since 3.2
  * @param <V> the value type
+ *
+ *         异步返回值，controller可以返回这个
  */
 public class WebAsyncTask<V> implements BeanFactoryAware {
 
