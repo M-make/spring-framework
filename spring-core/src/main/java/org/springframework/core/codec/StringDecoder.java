@@ -124,9 +124,10 @@ public final class StringDecoder extends AbstractDataBufferDecoder<String> {
 	@Override
 	public String decode(DataBuffer dataBuffer, ResolvableType elementType,
 			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
-
+		// 获取编码方式
 		Charset charset = getCharset(mimeType);
 		CharBuffer charBuffer = charset.decode(dataBuffer.asByteBuffer());
+		// 释放dataBuffer
 		DataBufferUtils.release(dataBuffer);
 		String value = charBuffer.toString();
 		LogFormatUtils.traceDebug(logger, traceOn -> {

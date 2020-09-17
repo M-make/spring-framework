@@ -460,4 +460,10 @@ public class MediaTypeTests {
 		assertThat(new MediaType("text", "*").isConcrete()).as("text/* concrete").isFalse();
 	}
 
+	@Test
+	public void myTest1(){
+		MediaType mediaType = MediaType.parseMediaType("text/html; charset=UTF-8");
+		System.out.println(1);
+	}
+
 }
