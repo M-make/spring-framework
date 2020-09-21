@@ -703,4 +703,12 @@ class AntPathMatcherTests {
 		assertThat(pathMatcher.isPattern(null)).isFalse();
 	}
 
+
+	@Test
+	void test1(){
+		PathMatcher p = new AntPathMatcher(".");
+		p.match("*","10.0.0.0:080");
+		System.out.println(1);
+	}
+
 }
