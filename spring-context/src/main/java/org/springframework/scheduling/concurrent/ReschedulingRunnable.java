@@ -72,11 +72,14 @@ class ReschedulingRunnable extends DelegatingErrorHandlingRunnable implements Sc
 	@Nullable
 	public ScheduledFuture<?> schedule() {
 		synchronized (this.triggerContextMonitor) {
+			// 下次任务执行的时间
 			this.scheduledExecutionTime = this.trigger.nextExecutionTime(this.triggerContext);
 			if (this.scheduledExecutionTime == null) {
 				return null;
 			}
+			// 还有多久需要执行下次任务
 			long initialDelay = this.scheduledExecutionTime.getTime() - System.currentTimeMillis();
+			// 延迟指定时间调度
 			this.currentFuture = this.executor.schedule(this, initialDelay, TimeUnit.MILLISECONDS);
 			return this;
 		}
@@ -89,13 +92,18 @@ class ReschedulingRunnable extends DelegatingErrorHandlingRunnable implements Sc
 
 	@Override
 	public void run() {
+		// 开始日期
 		Date actualExecutionTime = new Date();
+		// 真正执行的任务
 		super.run();
+		// 完成的时间
 		Date completionTime = new Date();
 		synchronized (this.triggerContextMonitor) {
 			Assert.state(this.scheduledExecutionTime != null, "No scheduled execution");
 			this.triggerContext.update(this.scheduledExecutionTime, actualExecutionTime, completionTime);
+			// 如果任务没有取消
 			if (!obtainCurrentFuture().isCancelled()) {
+				// 继续调度
 				schedule();
 			}
 		}
