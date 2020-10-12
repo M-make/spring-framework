@@ -113,6 +113,7 @@ public class ScheduledAnnotationBeanPostProcessor
 	@Nullable
 	private ApplicationContext applicationContext;
 
+	// 用来记录有哪些class没有注解
 	private final Set<Class<?>> nonAnnotatedClasses = Collections.newSetFromMap(new ConcurrentHashMap<>(64));
 
 	private final Map<Object, Set<ScheduledTask>> scheduledTasks = new IdentityHashMap<>(16);
@@ -324,10 +325,12 @@ public class ScheduledAnnotationBeanPostProcessor
 			// Ignore AOP infrastructure such as scoped proxies.
 			return bean;
 		}
-
+		// 去除aop的修饰，获取target
 		Class<?> targetClass = AopProxyUtils.ultimateTargetClass(bean);
+		// 如果没有被解析
 		if (!this.nonAnnotatedClasses.contains(targetClass) &&
 				AnnotationUtils.isCandidateClass(targetClass, Arrays.asList(Scheduled.class, Schedules.class))) {
+			// 解析有哪些方法有指定注解
 			Map<Method, Set<Scheduled>> annotatedMethods = MethodIntrospector.selectMethods(targetClass,
 					(MethodIntrospector.MetadataLookup<Set<Scheduled>>) method -> {
 						Set<Scheduled> scheduledMethods = AnnotatedElementUtils.getMergedRepeatableAnnotations(
@@ -335,6 +338,7 @@ public class ScheduledAnnotationBeanPostProcessor
 						return (!scheduledMethods.isEmpty() ? scheduledMethods : null);
 					});
 			if (annotatedMethods.isEmpty()) {
+				// 没有注解，记录一下
 				this.nonAnnotatedClasses.add(targetClass);
 				if (logger.isTraceEnabled()) {
 					logger.trace("No @Scheduled annotations found on bean class: " + targetClass);
@@ -343,6 +347,7 @@ public class ScheduledAnnotationBeanPostProcessor
 			else {
 				// Non-empty set of methods
 				annotatedMethods.forEach((method, scheduledMethods) ->
+						// 每个 @Scheduled 注解生成一个任务
 						scheduledMethods.forEach(scheduled -> processScheduled(scheduled, method, bean)));
 				if (logger.isTraceEnabled()) {
 					logger.trace(annotatedMethods.size() + " @Scheduled methods processed on bean '" + beanName +
@@ -362,6 +367,7 @@ public class ScheduledAnnotationBeanPostProcessor
 	 */
 	protected void processScheduled(Scheduled scheduled, Method method, Object bean) {
 		try {
+			// 根据实例和方法生成任务
 			Runnable runnable = createRunnable(bean, method);
 			boolean processedSchedule = false;
 			String errorMessage =
@@ -370,15 +376,19 @@ public class ScheduledAnnotationBeanPostProcessor
 			Set<ScheduledTask> tasks = new LinkedHashSet<>(4);
 
 			// Determine initial delay
+			// 第一次执行任务的延迟
 			long initialDelay = scheduled.initialDelay();
+			// 这个用string表示延迟，主要是为了下面的 resolveStringValue
 			String initialDelayString = scheduled.initialDelayString();
 			if (StringUtils.hasText(initialDelayString)) {
 				Assert.isTrue(initialDelay < 0, "Specify 'initialDelay' or 'initialDelayString', not both");
 				if (this.embeddedValueResolver != null) {
+					// 这里就可以解析字符串获取值了，比如在配置文件中配置一个值
 					initialDelayString = this.embeddedValueResolver.resolveStringValue(initialDelayString);
 				}
 				if (StringUtils.hasLength(initialDelayString)) {
 					try {
+						// 利用string覆盖原本的
 						initialDelay = parseDelayAsLong(initialDelayString);
 					}
 					catch (RuntimeException ex) {
