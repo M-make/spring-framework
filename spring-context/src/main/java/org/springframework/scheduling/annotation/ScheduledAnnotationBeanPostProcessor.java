@@ -399,16 +399,20 @@ public class ScheduledAnnotationBeanPostProcessor
 			}
 
 			// Check cron expression
+			// cron表达式
 			String cron = scheduled.cron();
 			if (StringUtils.hasText(cron)) {
+				// 时区
 				String zone = scheduled.zone();
 				if (this.embeddedValueResolver != null) {
 					cron = this.embeddedValueResolver.resolveStringValue(cron);
 					zone = this.embeddedValueResolver.resolveStringValue(zone);
 				}
 				if (StringUtils.hasLength(cron)) {
+					// cron表达式不适用于初始化延迟
 					Assert.isTrue(initialDelay == -1, "'initialDelay' not supported for cron triggers");
 					processedSchedule = true;
+					// 如果任务没有禁用
 					if (!Scheduled.CRON_DISABLED.equals(cron)) {
 						TimeZone timeZone;
 						if (StringUtils.hasText(zone)) {

@@ -166,14 +166,17 @@ public abstract class AsyncExecutionAspectSupport implements BeanFactoryAware {
 			Executor targetExecutor;
 			String qualifier = getExecutorQualifier(method);
 			if (StringUtils.hasLength(qualifier)) {
+				// 使用指定名称的executor
 				targetExecutor = findQualifiedExecutor(this.beanFactory, qualifier);
 			}
 			else {
+				// 使用默认的executor
 				targetExecutor = this.defaultExecutor.get();
 			}
 			if (targetExecutor == null) {
 				return null;
 			}
+			// 如果类型不是 AsyncListenableTaskExecutor 则使用适配器适配一下
 			executor = (targetExecutor instanceof AsyncListenableTaskExecutor ?
 					(AsyncListenableTaskExecutor) targetExecutor : new TaskExecutorAdapter(targetExecutor));
 			this.executors.put(method, executor);
@@ -230,11 +233,13 @@ public abstract class AsyncExecutionAspectSupport implements BeanFactoryAware {
 				// Search for TaskExecutor bean... not plain Executor since that would
 				// match with ScheduledExecutorService as well, which is unusable for
 				// our purposes here. TaskExecutor is more clearly designed for it.
+				// 直接获取 TaskExecutor 的子类
 				return beanFactory.getBean(TaskExecutor.class);
 			}
 			catch (NoUniqueBeanDefinitionException ex) {
 				logger.debug("Could not find unique TaskExecutor bean", ex);
 				try {
+					// 默认的executor
 					return beanFactory.getBean(DEFAULT_TASK_EXECUTOR_BEAN_NAME, Executor.class);
 				}
 				catch (NoSuchBeanDefinitionException ex2) {
@@ -248,6 +253,7 @@ public abstract class AsyncExecutionAspectSupport implements BeanFactoryAware {
 			catch (NoSuchBeanDefinitionException ex) {
 				logger.debug("Could not find default TaskExecutor bean", ex);
 				try {
+					// 默认的executor
 					return beanFactory.getBean(DEFAULT_TASK_EXECUTOR_BEAN_NAME, Executor.class);
 				}
 				catch (NoSuchBeanDefinitionException ex2) {

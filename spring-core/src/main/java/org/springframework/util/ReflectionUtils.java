@@ -49,6 +49,8 @@ public abstract class ReflectionUtils {
 	 * Pre-built MethodFilter that matches all non-bridge non-synthetic methods
 	 * which are not declared on {@code java.lang.Object}.
 	 * @since 3.0.5
+	 *
+	 *  用户申明的方法，不是合成方法也不是桥接方法
 	 */
 	public static final MethodFilter USER_DECLARED_METHODS =
 			(method -> !method.isBridge() && !method.isSynthetic());
@@ -355,22 +357,26 @@ public abstract class ReflectionUtils {
 	 */
 	public static void doWithMethods(Class<?> clazz, MethodCallback mc, @Nullable MethodFilter mf) {
 		// Keep backing up the inheritance hierarchy.
+		// 获取对应class的申明方法
 		Method[] methods = getDeclaredMethods(clazz, false);
 		for (Method method : methods) {
+			// 必须不为空 必须匹配给定的filter
 			if (mf != null && !mf.matches(method)) {
 				continue;
 			}
 			try {
+				// 调用callback
 				mc.doWith(method);
 			}
 			catch (IllegalAccessException ex) {
 				throw new IllegalStateException("Not allowed to access method '" + method.getName() + "': " + ex);
 			}
 		}
+		// 有父类 && 父类不能是object
 		if (clazz.getSuperclass() != null && (mf != USER_DECLARED_METHODS || clazz.getSuperclass() != Object.class)) {
 			doWithMethods(clazz.getSuperclass(), mc, mf);
 		}
-		else if (clazz.isInterface()) {
+		else if (clazz.isInterface()) { // 接口
 			for (Class<?> superIfc : clazz.getInterfaces()) {
 				doWithMethods(superIfc, mc, mf);
 			}

@@ -75,6 +75,7 @@ public class AnnotationAsyncExecutionInterceptor extends AsyncExecutionIntercept
 	 * {@linkplain #setExecutor(Executor) default executor} should be used
 	 * @see #determineAsyncExecutor(Method)
 	 */
+	// 从注解获取需要执行异步方法的executor的beanName
 	@Override
 	@Nullable
 	protected String getExecutorQualifier(Method method) {
@@ -84,6 +85,7 @@ public class AnnotationAsyncExecutionInterceptor extends AsyncExecutionIntercept
 		if (async == null) {
 			async = AnnotatedElementUtils.findMergedAnnotation(method.getDeclaringClass(), Async.class);
 		}
+		// 先获取方法的注解，然后获取类的注解
 		return (async != null ? async.value() : null);
 	}
 

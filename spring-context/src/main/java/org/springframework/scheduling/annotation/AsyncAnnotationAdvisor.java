@@ -98,6 +98,7 @@ public class AsyncAnnotationAdvisor extends AbstractPointcutAdvisor implements B
 		Set<Class<? extends Annotation>> asyncAnnotationTypes = new LinkedHashSet<>(2);
 		asyncAnnotationTypes.add(Async.class);
 		try {
+			// 兼容EJB的一些注解
 			asyncAnnotationTypes.add((Class<? extends Annotation>)
 					ClassUtils.forName("javax.ejb.Asynchronous", AsyncAnnotationAdvisor.class.getClassLoader()));
 		}
@@ -105,6 +106,7 @@ public class AsyncAnnotationAdvisor extends AbstractPointcutAdvisor implements B
 			// If EJB 3.1 API not present, simply ignore.
 		}
 		this.advice = buildAdvice(executor, exceptionHandler);
+		// 只有方法上含有 @Async 注解 的切入点
 		this.pointcut = buildPointcut(asyncAnnotationTypes);
 	}
 
@@ -163,6 +165,7 @@ public class AsyncAnnotationAdvisor extends AbstractPointcutAdvisor implements B
 	protected Pointcut buildPointcut(Set<Class<? extends Annotation>> asyncAnnotationTypes) {
 		ComposablePointcut result = null;
 		for (Class<? extends Annotation> asyncAnnotationType : asyncAnnotationTypes) {
+			// 对应的class上有注解 或者 对应的方法上有注解
 			Pointcut cpc = new AnnotationMatchingPointcut(asyncAnnotationType, true);
 			Pointcut mpc = new AnnotationMatchingPointcut(null, asyncAnnotationType, true);
 			if (result == null) {
