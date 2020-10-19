@@ -273,6 +273,8 @@ public abstract class AsyncExecutionAspectSupport implements BeanFactoryAware {
 	 * @param executor the chosen executor
 	 * @param returnType the declared return type (potentially a {@link Future} variant)
 	 * @return the execution result (potentially a corresponding {@link Future} handle)
+	 *
+	 *   根据返回值，进行不同的提交
 	 */
 	@Nullable
 	protected Object doSubmit(Callable<Object> task, AsyncTaskExecutor executor, Class<?> returnType) {

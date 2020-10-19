@@ -20,6 +20,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.web.util.DefaultUriBuilderFactory.EncodingMode;
@@ -102,6 +104,14 @@ public class DefaultUriBuilderFactoryTests {
 
 		URI uri = factory.expand("https://{host}:{port}/v42/customers/{id}", singletonMap("id", 123L));
 		assertThat(uri.toString()).isEqualTo("https://api.example.com:443/v42/customers/123");
+	}
+
+	@Test
+	public void test1(){
+		DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
+		factory.setEncodingMode(EncodingMode.URI_COMPONENT);
+		URI uri = factory.expand("https://baidu.com/v42/customers/{name}/{id}", ImmutableMap.of("id","111","name","ddd"));
+		System.out.println(uri);
 	}
 
 	@Test
