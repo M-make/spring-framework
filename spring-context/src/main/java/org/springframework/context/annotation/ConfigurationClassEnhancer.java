@@ -272,6 +272,8 @@ class ConfigurationClassEnhancer {
 	 * handling of bean semantics such as scoping and AOP proxying.
 	 * @see Bean
 	 * @see ConfigurationClassEnhancer
+	 *
+	 *    Bean注解方法的拦截
 	 */
 	private static class BeanMethodInterceptor implements MethodInterceptor, ConditionalCallback {
 
