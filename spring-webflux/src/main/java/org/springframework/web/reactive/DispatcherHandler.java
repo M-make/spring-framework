@@ -156,6 +156,7 @@ public class DispatcherHandler implements WebHandler, ApplicationContextAware {
 		return Flux.fromIterable(this.handlerMappings)
 				// 将所有的handlerMapping 调用 getHandler 方法
 				.concatMap(mapping -> mapping.getHandler(exchange))
+				// 第一个可用handler
 				.next()
 				.switchIfEmpty(createNotFoundError())
 				.flatMap(handler -> invokeHandler(exchange, handler))
