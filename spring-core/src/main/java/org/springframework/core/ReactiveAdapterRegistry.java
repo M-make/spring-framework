@@ -145,6 +145,8 @@ public class ReactiveAdapterRegistry {
 	 * @param source an instance of the reactive type
 	 * (i.e. to adapt from; may be {@code null} if the reactive type is specified)
 	 * @return the corresponding adapter, or {@code null} if none available
+	 *
+	 *  适配返回值类型
 	 */
 	@Nullable
 	public ReactiveAdapter getAdapter(@Nullable Class<?> reactiveType, @Nullable Object source) {

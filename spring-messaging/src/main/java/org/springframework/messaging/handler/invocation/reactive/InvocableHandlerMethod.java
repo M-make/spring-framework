@@ -137,6 +137,7 @@ public class InvocableHandlerMethod extends HandlerMethod {
 					value = CoroutinesUtils.invokeSuspendingFunction(method, getBean(), args);
 				}
 				else {
+					//  调用方法
 					value = method.invoke(getBean(), args);
 				}
 			}
