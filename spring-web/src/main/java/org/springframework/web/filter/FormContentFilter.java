@@ -51,6 +51,9 @@ import org.springframework.util.StringUtils;
  * and exposes it as Servlet request parameters. By default the Servlet spec
  * only requires this for HTTP POST.
  *
+ *  1.请求方法为PUT,PATCH,DELETE
+ *  2.请求contentType!=null
+ *  则 -> 将请求包装为FormContentRequestWrapper
  * @author Rossen Stoyanchev
  * @since 5.1
  */

@@ -92,7 +92,7 @@ public class RequestContextFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(
 			HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
-
+		// 将请求和响应包装到threadLocal
 		ServletRequestAttributes attributes = new ServletRequestAttributes(request, response);
 		initContextHolders(request, attributes);
 
