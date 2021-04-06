@@ -544,6 +544,33 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see #instantiateBean
 	 * @see #instantiateUsingFactoryMethod
 	 * @see #autowireConstructor
+	 *
+	 *
+	 *
+	 *  Spring 三级缓存
+	 *  - 目标：为了实现循环依赖(字段的)
+	 *  - 场景： A依赖B，B依赖A    A和B都是实现了某些代理的功能，例如含有事务方法
+	 *  1.首先初始化A
+	 *  2.实例化A(未注入属性以及init方法的调用)
+	 *  3.A加入到三级缓存(objectFactory的形式，如果调用getObject则会将bean进行beanPostProcessor的处理，例如AOP等等，会生成一个新对象，这里称之为A1)
+	 *  4.A注入字段B，先从三级缓存中寻找B，然后二级，然后一级
+	 *  5.如果缓存中都没有，则初始化B
+	 *  6.实例化B(未注入属性以及init方法的调用)
+	 *  7.B加入到三级缓存中(objectFactory)
+	 *  8.B注入字段A，从三级缓存开始寻找，此时A存在三级缓存，调用getObject方法生成了对象A1，将A1加入到二级缓存，同时删除三级缓存
+	 *  9.B调用init等初始化方法
+	 *  10.B进行BeanPostProcessor操作，此时会生成B1，最后加入一级缓存，清除自己在二级三级缓存的数据
+	 *  11.A最后将B1注入到字段中
+	 *  12.A调用init等初始化方法
+	 *  13.A此时会进行BeanPostProcessor操作(但是此时A已经进行过一次了，在第八步，B注入A的时候，所以此时并不会进行代理)
+	 *  14.A最后在二级缓存中发现了自己
+	 *  15.A将自己替换为A1，最后加入一级缓存，清除自己在二级三级缓存的数据
+	 *
+	 *  综上所述：
+	 *  A中的字段是含有B1
+	 *  B中的字段是含有A1
+	 *  那么最后返回的B1和A1如果在调用方法的时候获取对象呢？
+	 *  那是由于在生成A1和B1的时候，会将A和B组合进A1和B1，最后A1调用方法的时候AOP代理会拿到A进行方法调用。
 	 */
 	protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)
 			throws BeanCreationException {
@@ -582,6 +609,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Eagerly cache singletons to be able to resolve circular references
 		// even when triggered by lifecycle interfaces like BeanFactoryAware.
+		// 如果允许循环依赖并且是单例的，那么提前暴露此对象
 		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
 				isSingletonCurrentlyInCreation(beanName));
 		if (earlySingletonExposure) {
@@ -589,6 +617,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				logger.trace("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
+			// 加入到三级缓存
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
 
@@ -1819,6 +1848,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 调用org.springframework.beans.factory.config.BeanPostProcessor#postProcessAfterInitialization方法，
 			// 例如BeanValidationPostProcessor
 			// 就会在这里进行hibernate的注解校验
+			// 后置处理器，如果有AOP的话，会在此替换原有的对象，即代理对象
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}
 
