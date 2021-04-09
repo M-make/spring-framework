@@ -569,7 +569,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 *  综上所述：
 	 *  A中的字段是含有B1
 	 *  B中的字段是含有A1
-	 *  那么最后返回的B1和A1如果在调用方法的时候获取对象呢？
+	 *  那么最后返回的B1和A1如果在调用方法的时候获取对象B和A呢？
 	 *  那是由于在生成A1和B1的时候，会将A和B组合进A1和B1，最后A1调用方法的时候AOP代理会拿到A进行方法调用。
 	 */
 	protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)
@@ -640,6 +640,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		if (earlySingletonExposure) {
+			// 从二级缓存开始查找
 			Object earlySingletonReference = getSingleton(beanName, false);
 			if (earlySingletonReference != null) {
 				if (exposedObject == bean) {
